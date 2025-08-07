@@ -48,10 +48,17 @@ export default function Navigation() {
           <span className="text-xs mt-1">Alerts</span>
         </Link>
 
-        <button className="flex flex-col items-center py-2 px-3 rounded-lg text-gray-600 hover:text-gray-900 transition-colors">
+        <Link
+          to="/parent-dashboard/settings"
+          className={`flex flex-col items-center py-2 px-3 rounded-lg transition-colors ${
+            isActive("/parent-dashboard/settings")
+              ? "text-blue-600 bg-blue-50"
+              : "text-gray-600 hover:text-gray-900"
+          }`}
+        >
           <Settings className="h-5 w-5" />
           <span className="text-xs mt-1">Settings</span>
-        </button>
+        </Link>
       </div>
     </div>
   );

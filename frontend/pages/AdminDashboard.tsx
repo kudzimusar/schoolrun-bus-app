@@ -1,6 +1,7 @@
 import React from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Bus, Users, MapPin, BarChart3, Settings, Plus } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Bus, Users, MapPin, BarChart3, Settings, Plus, Route } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -33,6 +34,12 @@ export default function AdminDashboard() {
           <div className="flex items-center justify-between">
             <h1 className="text-2xl font-bold text-gray-900">Administrator Dashboard</h1>
             <div className="flex items-center space-x-4">
+              <Link to="/admin-dashboard/routes">
+                <Button variant="outline">
+                  <Route className="h-4 w-4 mr-2" />
+                  Manage Routes
+                </Button>
+              </Link>
               <Button>
                 <Plus className="h-4 w-4 mr-2" />
                 Add Bus

@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { Bus, Users, MapPin, Bell } from "lucide-react";
+import { Bus, Users, MapPin, Bell, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -13,9 +13,15 @@ export default function HomePage() {
             <Bus className="h-12 w-12 text-blue-600 mr-3" />
             <h1 className="text-4xl font-bold text-gray-900">School Run Bus App</h1>
           </div>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+          <p className="text-xl text-gray-600 max-w-2xl mx-auto mb-6">
             A comprehensive school bus tracking and communication platform for parents, drivers, and administrators
           </p>
+          <Link to="/login">
+            <Button size="lg" className="bg-blue-600 hover:bg-blue-700">
+              <LogIn className="h-5 w-5 mr-2" />
+              Get Started
+            </Button>
+          </Link>
         </header>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
@@ -63,9 +69,9 @@ export default function HomePage() {
               <CardDescription>Track your children's buses and receive notifications</CardDescription>
             </CardHeader>
             <CardContent>
-              <Link to="/parent-dashboard">
+              <Link to="/login">
                 <Button className="w-full bg-blue-600 hover:bg-blue-700">
-                  Parent Dashboard
+                  Parent Access
                 </Button>
               </Link>
             </CardContent>
@@ -77,9 +83,9 @@ export default function HomePage() {
               <CardDescription>Navigate routes and manage student manifests</CardDescription>
             </CardHeader>
             <CardContent>
-              <Link to="/driver-dashboard">
+              <Link to="/login">
                 <Button className="w-full bg-green-600 hover:bg-green-700">
-                  Driver Dashboard
+                  Driver Access
                 </Button>
               </Link>
             </CardContent>
@@ -91,13 +97,36 @@ export default function HomePage() {
               <CardDescription>Manage fleet, routes, and monitor performance</CardDescription>
             </CardHeader>
             <CardContent>
-              <Link to="/admin-dashboard">
+              <Link to="/login">
                 <Button className="w-full bg-purple-600 hover:bg-purple-700">
-                  Admin Dashboard
+                  Admin Access
                 </Button>
               </Link>
             </CardContent>
           </Card>
+        </div>
+
+        <div className="text-center mt-12">
+          <p className="text-sm text-gray-600 mb-4">
+            Demo Mode: Use any email/password combination to test the application
+          </p>
+          <div className="flex justify-center space-x-4">
+            <Link to="/parent-dashboard">
+              <Button variant="outline" size="sm">
+                Demo Parent Dashboard
+              </Button>
+            </Link>
+            <Link to="/driver-dashboard">
+              <Button variant="outline" size="sm">
+                Demo Driver Dashboard
+              </Button>
+            </Link>
+            <Link to="/admin-dashboard">
+              <Button variant="outline" size="sm">
+                Demo Admin Dashboard
+              </Button>
+            </Link>
+          </div>
         </div>
       </div>
     </div>
