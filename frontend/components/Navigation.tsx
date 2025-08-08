@@ -1,6 +1,6 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Home, MapPin, Bell, Settings } from "lucide-react";
+import { Home, MapPin, Bell, Settings, Wallet } from "lucide-react";
 
 export default function Navigation() {
   const location = useLocation();
@@ -34,6 +34,18 @@ export default function Navigation() {
         >
           <MapPin className="h-5 w-5" />
           <span className="text-xs mt-1">Map</span>
+        </Link>
+
+        <Link
+          to="/parent-dashboard/payments"
+          className={`flex flex-col items-center py-2 px-3 rounded-lg transition-colors ${
+            isActive("/parent-dashboard/payments")
+              ? "text-blue-600 bg-blue-50"
+              : "text-gray-600 hover:text-gray-900"
+          }`}
+        >
+          <Wallet className="h-5 w-5" />
+          <span className="text-xs mt-1">Payments</span>
         </Link>
 
         <Link

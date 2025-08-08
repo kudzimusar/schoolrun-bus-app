@@ -14,6 +14,8 @@ export interface User {
   name: string;
   role: string;
   phone?: string;
+  walletBalanceUsd: number;
+  walletBalanceZwl: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -30,7 +32,10 @@ export const updateUser = api<UpdateUserRequest, User>(
         phone = COALESCE(${req.phone}, phone),
         updated_at = NOW()
       WHERE id = ${req.id}
-      RETURNING id, email, name, role, phone, created_at as "createdAt", updated_at as "updatedAt"
+      RETURNING id, email, name, role, phone, 
+                wallet_balance_usd as "walletBalanceUsd", 
+                wallet_balance_zwl as "walletBalanceZwl",
+                created_at as "createdAt", updated_at as "updatedAt"
     `;
     
     if (!user) {

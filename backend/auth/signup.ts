@@ -1,4 +1,4 @@
-import { api } from "encore.dev/api";
+import { api, APIError } from "encore.dev/api";
 import { authDB } from "./db";
 import { userDB } from "../user/db";
 import crypto from "crypto";
@@ -17,6 +17,8 @@ export interface SignupResponse {
     email: string;
     name: string;
     role: string;
+    walletBalanceUsd: number;
+    walletBalanceZwl: number;
   };
   sessionToken: string;
   expiresAt: Date;
@@ -32,7 +34,7 @@ export const signup = api<SignupRequest, SignupResponse>(
     `;
     
     if (existingUser) {
-      throw new Error("User with this email already exists");
+      throw APIError.alreadyExists("User with this email already exists");
     }
     
     // Create new user
@@ -41,10 +43,12 @@ export const signup = api<SignupRequest, SignupResponse>(
       email: string;
       name: string;
       role: string;
+      wallet_balance_usd: number;
+      wallet_balance_zwl: number;
     }>`
       INSERT INTO users (email, name, role, phone)
       VALUES (${req.email}, ${req.name}, ${req.role}, ${req.phone})
-      RETURNING id, email, name, role
+      RETURNING id, email, name, role, wallet_balance_usd, wallet_balance_zwl
     `;
     
     if (!user) {
@@ -62,7 +66,14 @@ export const signup = api<SignupRequest, SignupResponse>(
     `;
     
     return {
-      user,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+        walletBalanceUsd: user.wallet_balance_usd,
+        walletBalanceZwl: user.wallet_balance_zwl,
+      },
       sessionToken,
       expiresAt,
     };

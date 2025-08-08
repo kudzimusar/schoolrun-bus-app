@@ -11,6 +11,8 @@ export interface User {
   name: string;
   role: string;
   phone?: string;
+  walletBalanceUsd: number;
+  walletBalanceZwl: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -20,7 +22,10 @@ export const getUser = api<GetUserParams, User>(
   { expose: true, method: "GET", path: "/users/:id" },
   async (params) => {
     const user = await userDB.queryRow<User>`
-      SELECT id, email, name, role, phone, created_at as "createdAt", updated_at as "updatedAt"
+      SELECT id, email, name, role, phone, 
+             wallet_balance_usd as "walletBalanceUsd", 
+             wallet_balance_zwl as "walletBalanceZwl",
+             created_at as "createdAt", updated_at as "updatedAt"
       FROM users 
       WHERE id = ${params.id}
     `;

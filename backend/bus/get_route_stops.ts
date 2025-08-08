@@ -13,6 +13,7 @@ export interface BusStop {
   longitude: number;
   stopOrder: number;
   estimatedArrivalTime?: string;
+  landmarkDescription?: string;
   createdAt: Date;
 }
 
@@ -29,6 +30,7 @@ export const getRouteStops = api<GetRouteStopsParams, GetRouteStopsResponse>(
     for await (const stop of busDB.query<BusStop>`
       SELECT id, route_id as "routeId", name, latitude, longitude, 
              stop_order as "stopOrder", estimated_arrival_time as "estimatedArrivalTime",
+             landmark_description as "landmarkDescription",
              created_at as "createdAt"
       FROM bus_stops 
       WHERE route_id = ${params.routeId}

@@ -8,6 +8,7 @@ export interface AddBusStopRequest {
   longitude: number;
   stopOrder: number;
   estimatedArrivalTime?: string;
+  landmarkDescription?: string;
 }
 
 export interface BusStop {
@@ -18,6 +19,7 @@ export interface BusStop {
   longitude: number;
   stopOrder: number;
   estimatedArrivalTime?: string;
+  landmarkDescription?: string;
   createdAt: Date;
 }
 
@@ -26,11 +28,12 @@ export const addBusStop = api<AddBusStopRequest, BusStop>(
   { expose: true, method: "POST", path: "/routes/stops" },
   async (req) => {
     const busStop = await busDB.queryRow<BusStop>`
-      INSERT INTO bus_stops (route_id, name, latitude, longitude, stop_order, estimated_arrival_time)
+      INSERT INTO bus_stops (route_id, name, latitude, longitude, stop_order, estimated_arrival_time, landmark_description)
       VALUES (${req.routeId}, ${req.name}, ${req.latitude}, ${req.longitude}, 
-              ${req.stopOrder}, ${req.estimatedArrivalTime})
+              ${req.stopOrder}, ${req.estimatedArrivalTime}, ${req.landmarkDescription})
       RETURNING id, route_id as "routeId", name, latitude, longitude, 
                 stop_order as "stopOrder", estimated_arrival_time as "estimatedArrivalTime",
+                landmark_description as "landmarkDescription",
                 created_at as "createdAt"
     `;
     

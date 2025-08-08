@@ -15,6 +15,7 @@ import SettingsPage from "./pages/SettingsPage";
 import RouteManagementPage from "./pages/RouteManagementPage";
 import ProfilePage from "./pages/ProfilePage";
 import UnauthorizedPage from "./pages/UnauthorizedPage";
+import PaymentsPage from "./pages/PaymentsPage";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -69,6 +70,11 @@ function AppInner() {
       <Route path="/parent-dashboard/settings" element={
         <ProtectedRoute allowedRoles={["parent"]}>
           <SettingsPage />
+        </ProtectedRoute>
+      } />
+      <Route path="/parent-dashboard/payments" element={
+        <ProtectedRoute allowedRoles={["parent"]}>
+          <PaymentsPage />
         </ProtectedRoute>
       } />
       <Route path="/driver-dashboard" element={

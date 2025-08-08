@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Bell, User, Shield, Smartphone, Mail } from "lucide-react";
+import { ArrowLeft, Bell, User, Shield, Smartphone, Mail, Languages } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
@@ -21,11 +21,7 @@ export default function SettingsPage() {
     emergency: true,
   });
   const [approachTime, setApproachTime] = useState("5");
-  const [profile, setProfile] = useState({
-    name: user?.name || "Sarah Johnson",
-    email: user?.email || "sarah.johnson@example.com",
-    phone: "+1 (555) 123-4567",
-  });
+  const [language, setLanguage] = useState("english");
   const { toast } = useToast();
 
   const handleNotificationChange = (key: string, value: boolean) => {
@@ -58,11 +54,10 @@ export default function SettingsPage() {
     }
   };
 
-  const handleSaveProfile = () => {
-    toast({
-      title: "Profile updated",
-      description: "Your profile information has been saved.",
-    });
+  const getLabel = (english: string, shona: string, ndebele: string) => {
+    if (language === 'shona') return shona;
+    if (language === 'ndebele') return ndebele;
+    return english;
   };
 
   return (
@@ -75,59 +70,31 @@ export default function SettingsPage() {
                 <ArrowLeft className="h-4 w-4" />
               </Button>
             </Link>
-            <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
+            <h1 className="text-2xl font-bold text-gray-900">
+              {getLabel('Settings', 'Zvirongwa', 'Izilungiselelo')}
+            </h1>
           </div>
         </div>
       </div>
 
       <div className="container mx-auto px-4 py-6 space-y-6">
-        {/* Profile Settings */}
+        {/* Language Settings */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center">
-              <User className="h-5 w-5 mr-2" />
-              Profile Information
+              <Languages className="h-5 w-5 mr-2" />
+              {getLabel('Language', 'Mutauro', 'Ulimi')}
             </CardTitle>
             <CardDescription>
-              Update your personal information and contact details
+              {getLabel('Choose your preferred language', 'Sarudza mutauro wako', 'Khetha ulimi lwakho')}
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">Full Name</Label>
-              <Input
-                id="name"
-                value={profile.name}
-                onChange={(e) => setProfile(prev => ({ ...prev, name: e.target.value }))}
-              />
+          <CardContent>
+            <div className="flex space-x-2">
+              <Button onClick={() => setLanguage('english')} variant={language === 'english' ? 'default' : 'outline'}>English</Button>
+              <Button onClick={() => setLanguage('shona')} variant={language === 'shona' ? 'default' : 'outline'}>Shona</Button>
+              <Button onClick={() => setLanguage('ndebele')} variant={language === 'ndebele' ? 'default' : 'outline'}>Ndebele</Button>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="email">Email Address</Label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                <Input
-                  id="email"
-                  type="email"
-                  value={profile.email}
-                  onChange={(e) => setProfile(prev => ({ ...prev, email: e.target.value }))}
-                  className="pl-10"
-                />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="phone">Phone Number</Label>
-              <div className="relative">
-                <Smartphone className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                <Input
-                  id="phone"
-                  type="tel"
-                  value={profile.phone}
-                  onChange={(e) => setProfile(prev => ({ ...prev, phone: e.target.value }))}
-                  className="pl-10"
-                />
-              </div>
-            </div>
-            <Button onClick={handleSaveProfile}>Save Profile</Button>
           </CardContent>
         </Card>
 
@@ -136,110 +103,42 @@ export default function SettingsPage() {
           <CardHeader>
             <CardTitle className="flex items-center">
               <Bell className="h-5 w-5 mr-2" />
-              Notification Preferences
+              {getLabel('Notification Preferences', 'Zviziviso', 'Izaziso')}
             </CardTitle>
             <CardDescription>
-              Choose which notifications you want to receive
+              {getLabel('Choose which notifications you want to receive', 'Sarudza zviziviso zvaunoda kugamuchira', 'Khetha izaziso ofuna ukuzithola')}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label htmlFor="bus-approaching">Bus Approaching</Label>
-                  <p className="text-sm text-gray-500">
-                    Get notified when the bus is near your stop
-                  </p>
-                </div>
+                <Label htmlFor="bus-approaching">{getLabel('Bus Approaching', 'Bhazi Rava Kusvika', 'Ibhasi Isiyesondela')}</Label>
                 <Switch
                   id="bus-approaching"
                   checked={notifications.busApproaching}
                   onCheckedChange={(checked) => handleNotificationChange('busApproaching', checked)}
                 />
               </div>
-
               <Separator />
-
               <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label htmlFor="bus-arrived">Bus Arrived</Label>
-                  <p className="text-sm text-gray-500">
-                    Get notified when the bus arrives at your stop
-                  </p>
-                </div>
+                <Label htmlFor="bus-arrived">{getLabel('Bus Arrived', 'Bhazi Rasvika', 'Ibhasi Isifikile')}</Label>
                 <Switch
                   id="bus-arrived"
                   checked={notifications.busArrived}
                   onCheckedChange={(checked) => handleNotificationChange('busArrived', checked)}
                 />
               </div>
-
               <Separator />
-
               <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label htmlFor="bus-delayed">Bus Delays</Label>
-                  <p className="text-sm text-gray-500">
-                    Get notified about bus delays or schedule changes
-                  </p>
-                </div>
+                <Label htmlFor="bus-delayed">{getLabel('Bus Delays', 'Kunonoka kweBhazi', 'Ukulibala Kwebhasi')}</Label>
                 <Switch
                   id="bus-delayed"
                   checked={notifications.busDelayed}
                   onCheckedChange={(checked) => handleNotificationChange('busDelayed', checked)}
                 />
               </div>
-
-              <Separator />
-
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label htmlFor="route-changed">Route Changes</Label>
-                  <p className="text-sm text-gray-500">
-                    Get notified about route modifications
-                  </p>
-                </div>
-                <Switch
-                  id="route-changed"
-                  checked={notifications.routeChanged}
-                  onCheckedChange={(checked) => handleNotificationChange('routeChanged', checked)}
-                />
-              </div>
-
-              <Separator />
-
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label htmlFor="emergency">Emergency Alerts</Label>
-                  <p className="text-sm text-gray-500">
-                    Get notified about emergency situations
-                  </p>
-                </div>
-                <Switch
-                  id="emergency"
-                  checked={notifications.emergency}
-                  onCheckedChange={(checked) => handleNotificationChange('emergency', checked)}
-                />
-              </div>
             </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="approach-time">Approach Notification Time</Label>
-              <div className="flex items-center space-x-2">
-                <Input
-                  id="approach-time"
-                  type="number"
-                  min="1"
-                  max="30"
-                  value={approachTime}
-                  onChange={(e) => setApproachTime(e.target.value)}
-                  className="w-20"
-                />
-                <span className="text-sm text-gray-500">minutes before arrival</span>
-              </div>
-            </div>
-
-            <Button onClick={handleSaveNotifications}>Save Notification Settings</Button>
+            <Button onClick={handleSaveNotifications}>{getLabel('Save Changes', 'Sevha Shanduko', 'Londoloza Izinguquko')}</Button>
           </CardContent>
         </Card>
 
@@ -248,25 +147,15 @@ export default function SettingsPage() {
           <CardHeader>
             <CardTitle className="flex items-center">
               <Shield className="h-5 w-5 mr-2" />
-              Security & Privacy
+              {getLabel('Security & Privacy', 'Chengetedzo', 'Ukuvikeleka')}
             </CardTitle>
-            <CardDescription>
-              Manage your account security and privacy settings
-            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <Button variant="outline" className="w-full">
-              Change Password
+              {getLabel('Change Password', 'Chinja Pasiwedhi', 'Guqula Iphasiwedi')}
             </Button>
-            <Button variant="outline" className="w-full">
-              Two-Factor Authentication
-            </Button>
-            <Button variant="outline" className="w-full">
-              Privacy Settings
-            </Button>
-            <Separator />
             <Button variant="destructive" className="w-full">
-              Delete Account
+              {getLabel('Delete Account', 'Bvisa Akaundi', 'Susa I-akhawunti')}
             </Button>
           </CardContent>
         </Card>

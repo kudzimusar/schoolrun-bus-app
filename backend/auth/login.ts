@@ -14,6 +14,8 @@ export interface LoginResponse {
     email: string;
     name: string;
     role: string;
+    walletBalanceUsd: number;
+    walletBalanceZwl: number;
   };
   sessionToken: string;
   expiresAt: Date;
@@ -29,8 +31,10 @@ export const login = api<LoginRequest, LoginResponse>(
       email: string;
       name: string;
       role: string;
+      wallet_balance_usd: number;
+      wallet_balance_zwl: number;
     }>`
-      SELECT id, email, name, role
+      SELECT id, email, name, role, wallet_balance_usd, wallet_balance_zwl
       FROM users 
       WHERE email = ${req.email}
     `;
@@ -53,7 +57,14 @@ export const login = api<LoginRequest, LoginResponse>(
     `;
     
     return {
-      user,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+        walletBalanceUsd: user.wallet_balance_usd,
+        walletBalanceZwl: user.wallet_balance_zwl,
+      },
       sessionToken,
       expiresAt,
     };

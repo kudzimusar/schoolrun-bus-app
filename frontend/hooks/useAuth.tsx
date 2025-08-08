@@ -6,6 +6,8 @@ interface User {
   email: string;
   name: string;
   role: string;
+  walletBalanceUsd: number;
+  walletBalanceZwl: number;
 }
 
 interface AuthContextType {
@@ -15,6 +17,7 @@ interface AuthContextType {
   signup: (email: string, password: string, name: string, role: string, phone?: string) => Promise<void>;
   logout: () => Promise<void>;
   updateProfile: (data: { name?: string; email?: string; phone?: string }) => Promise<void>;
+  updateWallet: (newBalances: { walletBalanceUsd: number; walletBalanceZwl: number }) => void;
   isLoading: boolean;
 }
 
@@ -109,6 +112,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const updateWallet = (newBalances: { walletBalanceUsd: number; walletBalanceZwl: number }) => {
+    if (user) {
+      const updatedUser = { ...user, ...newBalances };
+      setUser(updatedUser);
+      localStorage.setItem("user", JSON.stringify(updatedUser));
+    }
+  };
+
   return (
     <AuthContext.Provider value={{
       user,
@@ -117,6 +128,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       signup,
       logout,
       updateProfile,
+      updateWallet,
       isLoading
     }}>
       {children}
