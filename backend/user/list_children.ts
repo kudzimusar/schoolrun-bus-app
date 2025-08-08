@@ -22,20 +22,24 @@ export interface ListChildrenResponse {
 // Retrieves all children for a parent.
 export const listChildren = api<ListChildrenParams, ListChildrenResponse>(
   { expose: true, auth: true, method: "GET", path: "/users/:parentId/children" },
-  async (params) => {
+  async (params, _req?: unknown, auth?: any) => {
     const parent = await userDB.queryRow<{ role: string }>`
       SELECT role FROM users WHERE id = ${params.parentId}
     `;
     if (!parent) throw APIError.notFound("parent not found");
 
-    // Only allow admin or the parent themselves (frontend should pass their own id)
-    // If needed, fetch auth data here to compare IDs when available via encore.dev/beta/auth
+    // Enforce caller ownership unless admin
+    const callerId = (auth?.data as any)?.userId as number | undefined;
+    const callerRole = (auth?.data as any)?.roles?.[0] || parent.role;
+    if (callerRole !== "admin" && callerId !== params.parentId) {
+      throw APIError.permissionDenied("cannot view other user's children");
+    }
 
     const children: Child[] = [];
     
     for await (const child of userDB.query<Child>`
       SELECT id, parent_id as "parentId", name, school_id as "schoolId", 
-             bus_id as "busId", bus_stop_id as "busStopId", created_at as "createdAt"
+             bus_id as "BusId", bus_stop_id as "busStopId", created_at as "createdAt"
       FROM children 
       WHERE parent_id = ${params.parentId}
       ORDER BY created_at ASC
