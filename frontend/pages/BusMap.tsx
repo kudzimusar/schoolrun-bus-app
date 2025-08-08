@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useLocation, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, MapPin, Clock, Navigation as NavigationIcon, AlertTriangle, Zap } from "lucide-react";
@@ -10,31 +10,41 @@ import backend from "~backend/client";
 import LoadingSpinner from "../components/LoadingSpinner";
 import { useAuth } from "../hooks/useAuth";
 
+// Lazy load mapbox-gl only in browser
+let mapboxgl: any;
+if (typeof window !== "undefined") {
+  // @ts-ignore
+  mapboxgl = await import("mapbox-gl");
+}
+
 export default function BusMap() {
   const location = useLocation();
   const { user } = useAuth();
   const busId = location.state?.busId;
-  const [mapCenter, setMapCenter] = useState({ lat: 40.7128, lng: -74.0060 }); // Default to NYC
+  const mapRef = useRef<HTMLDivElement | null>(null);
+  const mapInstance = useRef<any>(null);
+  const markerRef = useRef<any>(null);
+  const [mapCenter, setMapCenter] = useState({ lat: 40.7128, lng: -74.0060 });
 
   const { data: busLocation, isLoading } = useQuery({
     queryKey: ["busLocation", busId],
     queryFn: () => backend.location.getBusLocation({ busId }),
     enabled: !!busId,
-    refetchInterval: 10000, // Refresh every 10 seconds
+    refetchInterval: 10000,
   });
 
   const { data: etaPrediction } = useQuery({
     queryKey: ["etaPrediction", busId],
     queryFn: () => backend.ai.predictETA({
       busId,
-      routeId: 1, // Hardcoded for demo
+      routeId: 1,
       currentLatitude: busLocation?.latitude || 40.7128,
       currentLongitude: busLocation?.longitude || -74.0060,
-      targetLatitude: 40.7158, // School location
+      targetLatitude: 40.7158,
       targetLongitude: -74.0090,
     }),
     enabled: !!busId && !!busLocation,
-    refetchInterval: 60000, // Refresh every minute
+    refetchInterval: 60000,
   });
 
   const { data: incidents } = useQuery({
@@ -45,12 +55,77 @@ export default function BusMap() {
 
   useEffect(() => {
     if (busLocation) {
-      setMapCenter({
-        lat: busLocation.latitude,
-        lng: busLocation.longitude,
-      });
+      setMapCenter({ lat: busLocation.latitude, lng: busLocation.longitude });
     }
   }, [busLocation]);
+
+  // Initialize Mapbox
+  useEffect(() => {
+    if (!mapRef.current || mapInstance.current || !import.meta.env.VITE_MAPBOX_TOKEN) return;
+    if (!mapboxgl) return;
+
+    mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN;
+    mapInstance.current = new mapboxgl.Map({
+      container: mapRef.current,
+      style: "mapbox://styles/mapbox/streets-v11",
+      center: [mapCenter.lng, mapCenter.lat],
+      zoom: 13,
+    });
+
+    mapInstance.current.addControl(new mapboxgl.NavigationControl());
+
+    return () => {
+      mapInstance.current?.remove();
+      mapInstance.current = null;
+    };
+  }, []);
+
+  // Update map center and marker on location changes
+  useEffect(() => {
+    if (!mapInstance.current || !mapboxgl) return;
+
+    mapInstance.current.setCenter([mapCenter.lng, mapCenter.lat]);
+
+    if (!markerRef.current) {
+      markerRef.current = new mapboxgl.Marker({ color: "#2563eb" })
+        .setLngLat([mapCenter.lng, mapCenter.lat])
+        .addTo(mapInstance.current);
+    } else {
+      markerRef.current.setLngLat([mapCenter.lng, mapCenter.lat]);
+    }
+  }, [mapCenter]);
+
+  // Live updates via streaming endpoint
+  useEffect(() => {
+    let closed = false;
+    let stream: any;
+    (async () => {
+      try {
+        stream = await (backend as any).location["liveBusLocations"]?.();
+        if (!stream) {
+          // Fallback to explicit client call if not in generated client
+          const base = (backend as any)["baseClient"] || { createStreamOut: (path: string) => new (window as any).StreamOut(import.meta.env.VITE_CLIENT_TARGET + path) };
+          stream = await (backend as any)["location"]?.["baseClient"]?.createStreamOut?.("/location/live");
+          if (!stream && (backend as any)["createStreamOut"]) {
+            stream = await (backend as any).createStreamOut("/location/live");
+          }
+        }
+        if (!stream) return;
+        for await (const evt of stream as AsyncIterable<any>) {
+          if (closed) break;
+          if (evt?.busId === busId) {
+            setMapCenter({ lat: evt.latitude, lng: evt.longitude });
+          }
+        }
+      } catch {
+        // Ignore streaming errors
+      }
+    })();
+    return () => {
+      closed = true;
+      try { stream?.close?.(); } catch {}
+    };
+  }, [busId]);
 
   if (!busId) {
     return (
@@ -96,7 +171,6 @@ export default function BusMap() {
       </div>
 
       <div className="container mx-auto px-4 py-6">
-        {/* Active Incidents Alert */}
         {incidents && incidents.incidents.length > 0 && (
           <Alert className="mb-6 border-orange-200 bg-orange-50">
             <AlertTriangle className="h-4 w-4 text-orange-600" />
@@ -140,7 +214,7 @@ export default function BusMap() {
                   <div>
                     <p className="text-sm text-gray-600">Location</p>
                     <p className="font-semibold text-sm">
-                      {busLocation.latitude.toFixed(4)}, {busLocation.longitude.toFixed(4)}
+                      {mapCenter.lat.toFixed(4)}, {mapCenter.lng.toFixed(4)}
                     </p>
                   </div>
                 </div>
@@ -158,7 +232,6 @@ export default function BusMap() {
           </Card>
         )}
 
-        {/* AI Prediction Details */}
         {etaPrediction && (
           <Card className="mb-6">
             <CardHeader>
@@ -212,27 +285,18 @@ export default function BusMap() {
             <CardTitle>Live Map</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="bg-gray-200 rounded-lg h-96 flex items-center justify-center">
-              <div className="text-center">
-                <MapPin className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-600">Interactive map would be displayed here</p>
-                <p className="text-sm text-gray-500 mt-2">
-                  Integration with Google Maps or similar mapping service
-                </p>
-                {busLocation && (
-                  <div className="mt-4 p-4 bg-white rounded-lg shadow-sm">
-                    <p className="text-sm font-medium">Bus Location:</p>
-                    <p className="text-sm text-gray-600">
-                      Lat: {busLocation.latitude.toFixed(6)}, Lng: {busLocation.longitude.toFixed(6)}
-                    </p>
-                    {etaPrediction && (
-                      <p className="text-sm text-blue-600 mt-2">
-                        AI Predicted ETA: {etaPrediction.predictedETA} minutes
-                      </p>
-                    )}
+            <div className="rounded-lg h-96">
+              {import.meta.env.VITE_MAPBOX_TOKEN ? (
+                <div ref={mapRef} className="h-96 w-full rounded-lg overflow-hidden" />
+              ) : (
+                <div className="bg-gray-200 rounded-lg h-96 flex items-center justify-center">
+                  <div className="text-center">
+                    <MapPin className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <p className="text-gray-600">Mapbox token missing</p>
+                    <p className="text-sm text-gray-500 mt-2">Set VITE_MAPBOX_TOKEN in your frontend .env</p>
                   </div>
-                )}
-              </div>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
