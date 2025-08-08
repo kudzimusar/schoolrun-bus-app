@@ -1,6 +1,7 @@
 import { api } from "encore.dev/api";
 import { locationDB } from "./db";
-import { geofencing } from "~encore/clients";
+import { checkGeofence } from "../geofencing/check_geofence";
+import type { GeofenceEvent } from "../geofencing/check_geofence";
 
 export interface UpdateLocationRequest {
   busId: number;
@@ -59,14 +60,14 @@ export const updateLocation = api<UpdateLocationRequest, LocationUpdate>(
     
     // Check for geofence events
     try {
-      const geofenceResult = await geofencing.checkGeofence({
+      const geofenceResult = await checkGeofence({
         busId: req.busId,
         latitude: req.latitude,
         longitude: req.longitude,
       });
       
       if (geofenceResult.events.length > 0) {
-        location.geofenceEvents = geofenceResult.events.map(event => ({
+        location.geofenceEvents = geofenceResult.events.map((event: GeofenceEvent) => ({
           geofenceName: event.geofenceName,
           eventType: event.eventType,
         }));

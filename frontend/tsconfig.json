@@ -28,7 +28,10 @@
       "~backend/client": [
         "./client.ts"
       ]
-    }
+    },
+    "types": [
+      "vite/client"
+    ]
   },
   "include": [
     "**/*.ts",

@@ -21,23 +21,20 @@ export const topUpWallet = api<TopUpWalletRequest, TopUpWalletResponse>(
       throw APIError.invalidArgument("Top-up amount must be positive");
     }
 
-    let query;
     if (req.currency === 'usd') {
-      query = `
+      await userDB.exec`
         UPDATE users 
         SET wallet_balance_usd = wallet_balance_usd + ${req.amount} 
         WHERE id = ${req.userId}
       `;
     } else {
-      query = `
+      await userDB.exec`
         UPDATE users 
         SET wallet_balance_zwl = wallet_balance_zwl + ${req.amount} 
         WHERE id = ${req.userId}
       `;
     }
     
-    await userDB.exec(query);
-
     const updatedUser = await userDB.queryRow<{
       wallet_balance_usd: number;
       wallet_balance_zwl: number;
