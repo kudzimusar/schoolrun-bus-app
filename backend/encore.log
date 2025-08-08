@@ -1,0 +1,27 @@
+
+[1mNote[0m: This CLI tool collects usage data to help us improve Encore.
+      You can disable this by running '[33mencore telemetry disable[0m'.
+
+78[0J[1000D[2K[36m  ⠋ Building Encore application graph... [0m
+8[0J[1000D[2K[36m  ⠙ Building Encore application graph... [0m
+[1000D[2K[36m  ⠋ Analyzing service topology... [0m
+8[0J[1000D[2K[36m  ⠚ Building Encore application graph... [0m
+[1000D[2K[36m  ⠙ Analyzing service topology... [0m
+8[0J[1000D[2K[36m  ⠒ Building Encore application graph... [0m
+[1000D[2K[36m  ⠚ Analyzing service topology... [0m
+8[0J[1000D[2K[36m  ⠂ Building Encore application graph... [0m
+[1000D[2K[36m  ⠒ Analyzing service topology... [0m
+[1000D[2K[36m  ⠋ Creating PostgreSQL database cluster... [0m
+8[0J[1000D[2K[36m  ⠂ Building Encore application graph... [0m
+[1000D[2K[36m  ⠂ Analyzing service topology... [0m
+[1000D[2K[36m  ⠙ Creating PostgreSQL database cluster... [0m
+[1000D[2K[36m  ⠋ Fetching application secrets... [0m
+8[0J[1000D[2K[36m  ⠒ Building Encore application graph... [0m
+[1000D[2K[36m  ⠂ Analyzing service topology... [0m
+[1000D[2K[36m  ⠚ Creating PostgreSQL database cluster... [0m
+[1000D[2K[31m  ❌ Fetching application secrets... Failed: fetch secrets for school-run-bus-app-3iki: GET /apps/school-run-bus-app-3iki/secrets:values?kind=development: Get "https://api.encore.cloud/apps/school-run-bus-app-3iki/secrets:values?kind=development": not logged in: run 'encore auth login' first[0m
+8[0J[1000D[2K[36m  ⠲ Building Encore application graph... [0m
+[1000D[2K[36m  ⠒ Analyzing service topology... [0m
+[1000D[2K[33m  ⚠️ Creating PostgreSQL database cluster... Canceled[0m
+[1000D[2K[31m  ❌ Fetching application secrets... Failed: fetch secrets for school-run-bus-app-3iki: GET /apps/school-run-bus-app-3iki/secrets:values?kind=development: Get "https://api.encore.cloud/apps/school-run-bus-app-3iki/secrets:values?kind=development": not logged in: run 'encore auth login' first[0m
+fetch secrets for school-run-bus-app-3iki: GET /apps/school-run-bus-app-3iki/secrets:values?kind=development: Get "https://api.encore.cloud/apps/school-run-bus-app-3iki/secrets:values?kind=development": not logged in: run 'encore auth login' first

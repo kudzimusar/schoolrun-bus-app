@@ -4,10 +4,11 @@
   "type": "module",
   "packageManager": "bun",
   "scripts": {
-    "build": "cd ../frontend && bun install && vite build --outDir=../backend/frontend/dist"
+    "build": "cd ../frontend && bun install && vite build --outDir=../backend/frontend/dist",
+    "test": "bun test"
   },
   "dependencies": {
-    "encore.dev": "^1.48.8"
+    "encore.dev": "^1.48.12"
   },
   "devDependencies": {
     "@types/node": "^24.2.0",
