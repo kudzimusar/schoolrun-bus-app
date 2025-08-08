@@ -1,5 +1,10 @@
 import { api } from "encore.dev/api";
 import { aiDB } from "./db";
+import { secret } from "encore.dev/config";
+
+const MapboxAccessToken = secret("MapboxAccessToken");
+
+const etaCache = new Map<string, { etaMinutes: number; expiresAt: number }>();
 
 export interface PredictETARequest {
   busId: number;
@@ -26,10 +31,31 @@ export interface ETAPrediction {
   validUntil: Date;
 }
 
+async function getMapboxETA(lat1: number, lon1: number, lat2: number, lon2: number): Promise<number | undefined> {
+  const token = MapboxAccessToken();
+  if (!token) return undefined;
+  const cacheKey = `${lat1},${lon1}->${lat2},${lon2}`;
+  const cached = etaCache.get(cacheKey);
+  const now = Date.now();
+  if (cached && cached.expiresAt > now) return cached.etaMinutes;
+  const url = `https://api.mapbox.com/directions/v5/mapbox/driving/${lon1},${lat1};${lon2},${lat2}?access_token=${token}&overview=false`;
+  const resp = await fetch(url);
+  if (!resp.ok) return undefined;
+  const data: any = await resp.json();
+  const durationSec = data?.routes?.[0]?.duration as number | undefined;
+  if (!durationSec) return undefined;
+  const etaMin = Math.ceil(durationSec / 60);
+  etaCache.set(cacheKey, { etaMinutes: etaMin, expiresAt: now + 2 * 60 * 1000 });
+  return etaMin;
+}
+
 // Predicts ETA for a bus to reach a specific location using AI analysis.
 export const predictETA = api<PredictETARequest, ETAPrediction>(
   { expose: true, method: "POST", path: "/ai/predict-eta" },
   async (req) => {
+    // Mapbox ETA if available
+    const mapboxETA = await getMapboxETA(req.currentLatitude, req.currentLongitude, req.targetLatitude, req.targetLongitude).catch(() => undefined);
+
     // Calculate base distance
     const distance = calculateDistance(
       req.currentLatitude, req.currentLongitude,
@@ -60,12 +86,13 @@ export const predictETA = api<PredictETARequest, ETAPrediction>(
     let adjustedSpeed = avgSpeed;
     if (isRushHour) adjustedSpeed *= 0.7; // 30% slower during rush hour
     
-    // Calculate ETA in minutes
+    // Calculate ETA in minutes (fallback)
     const baseETA = (distance / 1000) / adjustedSpeed * 60; // Convert to minutes
-    const predictedETA = Math.round(baseETA + avgDelay);
+    const fallbackETA = Math.round(baseETA + avgDelay);
+    const predictedETA = mapboxETA ?? fallbackETA;
     
     // Calculate confidence based on data availability
-    const confidenceScore = Math.min(0.95, 0.5 + (historicalData ? 0.3 : 0));
+    const confidenceScore = Math.min(0.95, 0.5 + (historicalData ? 0.3 : 0) + (mapboxETA ? 0.15 : 0));
     
     const factors = {
       distance: Math.round(distance),
