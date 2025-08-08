@@ -3,6 +3,8 @@ import { userDB } from "../user/db";
 import { busDB } from "../bus/db";
 import { locationDB } from "../location/db";
 import { notificationDB } from "../notification/db";
+import { geofencingDB } from "../geofencing/db";
+import { analyticsDB } from "../analytics/db";
 
 // Seeds the database with sample data for testing.
 export const seedData = api<void, { message: string }>(
@@ -14,7 +16,8 @@ export const seedData = api<void, { message: string }>(
       (1, 'parent1@example.com', 'Sarah Johnson', 'parent', '+1234567890'),
       (2, 'parent2@example.com', 'Michael Chen', 'parent', '+1234567891'),
       (3, 'driver1@example.com', 'Robert Smith', 'driver', '+1234567892'),
-      (4, 'admin1@example.com', 'Lisa Anderson', 'admin', '+1234567893')
+      (4, 'admin1@example.com', 'Lisa Anderson', 'admin', '+1234567893'),
+      (5, 'operator1@example.com', 'David Wilson', 'operator', '+1234567894')
       ON CONFLICT (id) DO NOTHING
     `;
 
@@ -50,7 +53,19 @@ export const seedData = api<void, { message: string }>(
       INSERT INTO bus_stops (id, route_id, name, latitude, longitude, stop_order, estimated_arrival_time) VALUES
       (1, 1, 'Maple Street & Oak Avenue', 40.7128, -74.0060, 1, '08:15:00'),
       (2, 1, 'Pine Street & Elm Avenue', 40.7138, -74.0070, 2, '08:20:00'),
-      (3, 1, 'Cedar Street & Birch Avenue', 40.7148, -74.0080, 3, '08:25:00')
+      (3, 1, 'Cedar Street & Birch Avenue', 40.7148, -74.0080, 3, '08:25:00'),
+      (4, 1, 'Oakwood Elementary School', 40.7158, -74.0090, 4, '08:30:00')
+      ON CONFLICT (id) DO NOTHING
+    `;
+
+    // Create sample geofences
+    await geofencingDB.exec`
+      INSERT INTO geofences (id, name, type, latitude, longitude, radius_meters) VALUES
+      (1, 'Oakwood Elementary School', 'school', 40.7158, -74.0090, 200),
+      (2, 'Maple Street Stop', 'bus_stop', 40.7128, -74.0060, 50),
+      (3, 'Pine Street Stop', 'bus_stop', 40.7138, -74.0070, 50),
+      (4, 'Cedar Street Stop', 'bus_stop', 40.7148, -74.0080, 50),
+      (5, 'Bus Depot', 'depot', 40.7100, -74.0050, 100)
       ON CONFLICT (id) DO NOTHING
     `;
 
@@ -77,6 +92,22 @@ export const seedData = api<void, { message: string }>(
       ON CONFLICT DO NOTHING
     `;
 
-    return { message: "Sample data seeded successfully" };
+    // Create sample performance metrics
+    await analyticsDB.exec`
+      INSERT INTO performance_metrics (metric_type, entity_type, entity_id, value, unit, date) VALUES
+      ('on_time_rate', 'system', NULL, 94.2, 'percentage', CURRENT_DATE),
+      ('fuel_efficiency', 'system', NULL, 8.5, 'mpg', CURRENT_DATE),
+      ('incident_rate', 'system', NULL, 2.1, 'per_100_trips', CURRENT_DATE),
+      ('route_completion', 'system', NULL, 98.7, 'percentage', CURRENT_DATE),
+      ('on_time_rate', 'bus', 1, 96.5, 'percentage', CURRENT_DATE),
+      ('on_time_rate', 'bus', 2, 91.8, 'percentage', CURRENT_DATE),
+      ('fuel_efficiency', 'bus', 1, 9.2, 'mpg', CURRENT_DATE),
+      ('fuel_efficiency', 'bus', 2, 7.8, 'mpg', CURRENT_DATE)
+      ON CONFLICT (metric_type, entity_type, entity_id, date) DO UPDATE SET
+        value = EXCLUDED.value,
+        unit = EXCLUDED.unit
+    `;
+
+    return { message: "Sample data seeded successfully with enhanced features" };
   }
 );

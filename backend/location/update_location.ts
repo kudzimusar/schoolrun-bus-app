@@ -1,5 +1,6 @@
 import { api } from "encore.dev/api";
 import { locationDB } from "./db";
+import { geofencing } from "~encore/clients";
 
 export interface UpdateLocationRequest {
   busId: number;
@@ -17,9 +18,13 @@ export interface LocationUpdate {
   speed?: number;
   heading?: number;
   timestamp: Date;
+  geofenceEvents?: {
+    geofenceName: string;
+    eventType: string;
+  }[];
 }
 
-// Updates the real-time location of a bus.
+// Updates the real-time location of a bus and checks for geofence events.
 export const updateLocation = api<UpdateLocationRequest, LocationUpdate>(
   { expose: true, method: "POST", path: "/location/update" },
   async (req) => {
@@ -34,10 +39,16 @@ export const updateLocation = api<UpdateLocationRequest, LocationUpdate>(
       throw new Error("Failed to update location");
     }
     
+    // Determine bus status based on speed
+    let status = 'stopped';
+    if (req.speed && req.speed > 5) {
+      status = 'moving';
+    }
+    
     // Update or insert current status
     await locationDB.exec`
       INSERT INTO bus_status (bus_id, current_latitude, current_longitude, status, last_updated)
-      VALUES (${req.busId}, ${req.latitude}, ${req.longitude}, 'moving', NOW())
+      VALUES (${req.busId}, ${req.latitude}, ${req.longitude}, ${status}, NOW())
       ON CONFLICT (bus_id) 
       DO UPDATE SET 
         current_latitude = EXCLUDED.current_latitude,
@@ -45,6 +56,25 @@ export const updateLocation = api<UpdateLocationRequest, LocationUpdate>(
         status = EXCLUDED.status,
         last_updated = EXCLUDED.last_updated
     `;
+    
+    // Check for geofence events
+    try {
+      const geofenceResult = await geofencing.checkGeofence({
+        busId: req.busId,
+        latitude: req.latitude,
+        longitude: req.longitude,
+      });
+      
+      if (geofenceResult.events.length > 0) {
+        location.geofenceEvents = geofenceResult.events.map(event => ({
+          geofenceName: event.geofenceName,
+          eventType: event.eventType,
+        }));
+      }
+    } catch (error) {
+      console.error("Failed to check geofences:", error);
+      // Continue without geofence events if service is unavailable
+    }
     
     return location;
   }

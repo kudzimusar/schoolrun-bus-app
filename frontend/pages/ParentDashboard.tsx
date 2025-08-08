@@ -1,10 +1,11 @@
 import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { MapPin, Clock, Bell, Settings, ArrowRight } from "lucide-react";
+import { MapPin, Clock, Bell, Settings, ArrowRight, AlertTriangle } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import backend from "~backend/client";
 import Navigation from "../components/Navigation";
 import LoadingSpinner from "../components/LoadingSpinner";
@@ -23,6 +24,11 @@ export default function ParentDashboard() {
   const { data: notifications } = useQuery({
     queryKey: ["notifications", 1], // Using hardcoded user ID for demo
     queryFn: () => backend.notification.listNotifications({ userId: 1 }),
+  });
+
+  const { data: incidents } = useQuery({
+    queryKey: ["incidents"],
+    queryFn: () => backend.incident.listIncidents({ status: "open" }),
   });
 
   if (childrenLoading || locationsLoading) {
@@ -44,9 +50,12 @@ export default function ParentDashboard() {
   };
 
   const unreadCount = notifications?.notifications.filter(n => !n.isRead).length || 0;
+  const activeIncidents = incidents?.incidents.filter(i => 
+    children?.children.some(child => child.busId === i.busId)
+  ) || [];
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 pb-20">
       <div className="bg-white shadow-sm border-b">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
@@ -63,10 +72,12 @@ export default function ParentDashboard() {
                   )}
                 </Button>
               </Link>
-              <Button variant="outline" size="sm">
-                <Settings className="h-4 w-4 mr-2" />
-                Settings
-              </Button>
+              <Link to="/parent-dashboard/settings">
+                <Button variant="outline" size="sm">
+                  <Settings className="h-4 w-4 mr-2" />
+                  Settings
+                </Button>
+              </Link>
             </div>
           </div>
         </div>
@@ -74,6 +85,16 @@ export default function ParentDashboard() {
 
       <div className="container mx-auto px-4 py-6">
         <div className="grid gap-6">
+          {/* Active Incidents Alert */}
+          {activeIncidents.length > 0 && (
+            <Alert className="border-orange-200 bg-orange-50">
+              <AlertTriangle className="h-4 w-4 text-orange-600" />
+              <AlertDescription className="text-orange-800">
+                <strong>Active Incident:</strong> {activeIncidents[0].title} - {activeIncidents[0].description}
+              </AlertDescription>
+            </Alert>
+          )}
+
           {children?.children.map((child) => {
             const busLocation = getBusLocation(child.busId);
             
@@ -111,10 +132,16 @@ export default function ParentDashboard() {
                           </div>
                         </>
                       )}
+                      {!busLocation && child.busId && (
+                        <div className="flex items-center text-sm text-gray-500">
+                          <AlertTriangle className="h-4 w-4 mr-2" />
+                          Bus location unavailable
+                        </div>
+                      )}
                     </div>
                     <div className="flex justify-end">
                       <Link to="/parent-dashboard/bus-map" state={{ busId: child.busId }}>
-                        <Button className="w-full md:w-auto">
+                        <Button className="w-full md:w-auto" disabled={!child.busId}>
                           View on Map
                           <ArrowRight className="h-4 w-4 ml-2" />
                         </Button>
@@ -133,6 +160,30 @@ export default function ParentDashboard() {
               </CardContent>
             </Card>
           )}
+
+          {/* Quick Actions */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Quick Actions</CardTitle>
+              <CardDescription>Manage your account and preferences</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid md:grid-cols-2 gap-4">
+                <Link to="/parent-dashboard/settings">
+                  <Button variant="outline" className="w-full h-16 flex-col">
+                    <Settings className="h-6 w-6 mb-1" />
+                    Notification Settings
+                  </Button>
+                </Link>
+                <Link to="/parent-dashboard/notifications-history">
+                  <Button variant="outline" className="w-full h-16 flex-col">
+                    <Bell className="h-6 w-6 mb-1" />
+                    View All Alerts
+                  </Button>
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
 
