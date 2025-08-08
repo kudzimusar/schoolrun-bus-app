@@ -1,5 +1,6 @@
 import React, { useState, useEffect, createContext, useContext, ReactNode } from "react";
 import backend from "~backend/client";
+import { useAuth as useClerkAuth } from "@clerk/clerk-react";
 
 interface User {
   id: number;
@@ -28,6 +29,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [sessionToken, setSessionToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [client, setClient] = useState<any>(null);
+  const clerk = useClerkAuth?.();
 
   useEffect(() => {
     const token = localStorage.getItem("sessionToken");
@@ -36,6 +38,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (userData) setUser(JSON.parse(userData));
     setIsLoading(false);
   }, []);
+
+  useEffect(() => {
+    // If Clerk is present and signed in, get a token and set it
+    (async () => {
+      try {
+        if (clerk && clerk.isSignedIn) {
+          const t = await clerk.getToken();
+          if (t) setSessionToken(t);
+        }
+      } catch {}
+    })();
+  }, [clerk?.isSignedIn]);
 
   useEffect(() => {
     const headers: Record<string, string> = { "Content-Type": "application/json" };
