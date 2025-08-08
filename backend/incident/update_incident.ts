@@ -23,7 +23,7 @@ export interface Incident {
 
 // Updates an incident status or details.
 export const updateIncident = api<UpdateIncidentRequest, Incident>(
-  { expose: true, method: "PUT", path: "/incidents/:incidentId" },
+  { expose: true, auth: true, method: "PUT", path: "/incidents/:incidentId" },
   async (req) => {
     const resolvedAt = req.status === 'resolved' || req.status === 'closed' ? 'NOW()' : 'resolved_at';
     

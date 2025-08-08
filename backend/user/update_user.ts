@@ -22,7 +22,7 @@ export interface User {
 
 // Updates user profile information.
 export const updateUser = api<UpdateUserRequest, User>(
-  { expose: true, method: "PUT", path: "/users/:id" },
+  { expose: true, auth: true, method: "PUT", path: "/users/:id" },
   async (req) => {
     const user = await userDB.queryRow<User>`
       UPDATE users 

@@ -16,7 +16,7 @@ export interface BusLocation {
 
 // Retrieves the current location and status of a bus.
 export const getBusLocation = api<GetBusLocationParams, BusLocation>(
-  { expose: true, method: "GET", path: "/location/bus/:busId" },
+  { expose: true, auth: true, method: "GET", path: "/location/bus/:busId" },
   async (params) => {
     const location = await locationDB.queryRow<BusLocation>`
       SELECT bus_id as "busId", current_latitude as "latitude", 

@@ -28,7 +28,7 @@ export interface ListIncidentsResponse {
 
 // Retrieves incidents with optional filtering.
 export const listIncidents = api<ListIncidentsParams, ListIncidentsResponse>(
-  { expose: true, method: "GET", path: "/incidents" },
+  { expose: true, auth: true, method: "GET", path: "/incidents" },
   async (params) => {
     const incidents: Incident[] = [];
     

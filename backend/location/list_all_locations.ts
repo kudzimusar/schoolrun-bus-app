@@ -16,7 +16,7 @@ export interface ListAllLocationsResponse {
 
 // Retrieves current locations of all active buses.
 export const listAllLocations = api<void, ListAllLocationsResponse>(
-  { expose: true, method: "GET", path: "/location/all" },
+  { expose: true, auth: true, method: "GET", path: "/location/all" },
   async () => {
     const locations: BusLocation[] = [];
     

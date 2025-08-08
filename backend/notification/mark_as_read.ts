@@ -7,7 +7,7 @@ export interface MarkAsReadRequest {
 
 // Marks a notification as read.
 export const markAsRead = api<MarkAsReadRequest, void>(
-  { expose: true, method: "PUT", path: "/notifications/:notificationId/read" },
+  { expose: true, auth: true, method: "PUT", path: "/notifications/:notificationId/read" },
   async (req) => {
     await notificationDB.exec`
       UPDATE notifications 

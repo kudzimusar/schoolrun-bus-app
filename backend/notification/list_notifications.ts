@@ -1,5 +1,6 @@
-import { api } from "encore.dev/api";
+import { api, APIError } from "encore.dev/api";
 import { notificationDB } from "./db";
+import { userDB } from "../user/db";
 
 export interface ListNotificationsParams {
   userId: number;
@@ -22,8 +23,19 @@ export interface ListNotificationsResponse {
 
 // Retrieves all notifications for a user.
 export const listNotifications = api<ListNotificationsParams, ListNotificationsResponse>(
-  { expose: true, method: "GET", path: "/notifications/user/:userId" },
-  async (params) => {
+  { expose: true, auth: true, method: "GET", path: "/notifications/user/:userId" },
+  async (params, _req?: unknown, auth?: any) => {
+    const user = await userDB.queryRow<{ role: string }>`
+      SELECT role FROM users WHERE id = ${params.userId}
+    `;
+    if (!user) throw APIError.notFound("user not found");
+
+    const callerId = (auth?.data as any)?.userId as number | undefined;
+    const callerRole = (auth?.data as any)?.roles?.[0] || user.role;
+    if (callerRole !== "admin" && callerId !== params.userId) {
+      throw APIError.permissionDenied("cannot view other user's notifications");
+    }
+
     const notifications: Notification[] = [];
     
     for await (const notification of notificationDB.query<Notification>`

@@ -1,5 +1,7 @@
 import React, { useState, useEffect, createContext, useContext, ReactNode } from "react";
 import backend from "~backend/client";
+import { useAuth as useClerkAuth } from "@clerk/clerk-react";
+import { useAuth0 } from "@auth0/auth0-react";
 
 interface User {
   id: number;
@@ -27,66 +29,80 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [sessionToken, setSessionToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [client, setClient] = useState<any>(null);
+  const clerk = useClerkAuth?.();
+  const auth0 = useAuth0?.();
 
   useEffect(() => {
-    // Check for existing session on app load
     const token = localStorage.getItem("sessionToken");
     const userData = localStorage.getItem("user");
-    
-    if (token && userData) {
-      setSessionToken(token);
-      setUser(JSON.parse(userData));
-    }
+    if (token) setSessionToken(token);
+    if (userData) setUser(JSON.parse(userData));
     setIsLoading(false);
   }, []);
 
+  useEffect(() => {
+    (async () => {
+      try {
+        if (clerk && clerk.isSignedIn) {
+          const t = await clerk.getToken();
+          if (t) setSessionToken(t);
+        }
+      } catch {}
+    })();
+  }, [clerk?.isSignedIn]);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        if (auth0 && auth0.isAuthenticated) {
+          // Prefer ID token for backend verification
+          const claims = await auth0.getIdTokenClaims();
+          const raw = (claims as any)?.__raw as string | undefined;
+          if (raw) setSessionToken(raw);
+        }
+      } catch {}
+    })();
+  }, [auth0?.isAuthenticated]);
+
+  useEffect(() => {
+    const headers: Record<string, string> = { "Content-Type": "application/json" };
+    if (sessionToken) headers["Authorization"] = `Bearer ${sessionToken}`;
+    const c = backend.with({ requestInit: { credentials: "include", headers } });
+    setClient(c);
+  }, [sessionToken]);
+
   const login = async (email: string, password: string) => {
-    try {
-      const response = await backend.auth.login({ email, password });
-      
-      setUser(response.user);
-      setSessionToken(response.sessionToken);
-      
-      // Store in localStorage for persistence
-      localStorage.setItem("sessionToken", response.sessionToken);
-      localStorage.setItem("user", JSON.stringify(response.user));
-    } catch (error) {
-      console.error("Login failed:", error);
-      throw error;
-    }
+    const c = client ?? backend;
+    const response = await c.auth.login({ email, password });
+    setUser(response.user);
+    setSessionToken(response.sessionToken);
+    localStorage.setItem("sessionToken", response.sessionToken);
+    localStorage.setItem("user", JSON.stringify(response.user));
   };
 
   const signup = async (email: string, password: string, name: string, role: string, phone?: string) => {
-    try {
-      const response = await backend.auth.signup({ 
-        email, 
-        password, 
-        name, 
-        role: role as "parent" | "driver" | "admin" | "operator",
-        phone 
-      });
-      
-      setUser(response.user);
-      setSessionToken(response.sessionToken);
-      
-      // Store in localStorage for persistence
-      localStorage.setItem("sessionToken", response.sessionToken);
-      localStorage.setItem("user", JSON.stringify(response.user));
-    } catch (error) {
-      console.error("Signup failed:", error);
-      throw error;
-    }
+    const c = client ?? backend;
+    const response = await c.auth.signup({
+      email,
+      password,
+      name,
+      role: role as "parent" | "driver" | "admin" | "operator",
+      phone,
+    });
+    setUser(response.user);
+    setSessionToken(response.sessionToken);
+    localStorage.setItem("sessionToken", response.sessionToken);
+    localStorage.setItem("user", JSON.stringify(response.user));
   };
 
   const logout = async () => {
     try {
       if (sessionToken) {
-        await backend.auth.logout({ sessionToken });
+        const c = client ?? backend;
+        await c.auth.logout({ sessionToken });
       }
-    } catch (error) {
-      console.error("Logout error:", error);
     } finally {
-      // Clear state and localStorage regardless of API call success
       setUser(null);
       setSessionToken(null);
       localStorage.removeItem("sessionToken");
@@ -96,20 +112,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const updateProfile = async (data: { name?: string; email?: string; phone?: string }) => {
     if (!user) throw new Error("No user logged in");
-    
-    try {
-      const updatedUser = await backend.user.updateUser({
-        id: user.id,
-        ...data
-      });
-      
-      const newUser = { ...user, ...updatedUser };
-      setUser(newUser);
-      localStorage.setItem("user", JSON.stringify(newUser));
-    } catch (error) {
-      console.error("Profile update failed:", error);
-      throw error;
-    }
+    const c = client ?? backend;
+    const updatedUser = await c.user.updateUser({ id: user.id, ...data });
+    const newUser = { ...user, ...updatedUser };
+    setUser(newUser);
+    localStorage.setItem("user", JSON.stringify(newUser));
   };
 
   const updateWallet = (newBalances: { walletBalanceUsd: number; walletBalanceZwl: number }) => {
@@ -121,16 +128,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{
-      user,
-      sessionToken,
-      login,
-      signup,
-      logout,
-      updateProfile,
-      updateWallet,
-      isLoading
-    }}>
+    <AuthContext.Provider value={{ user, sessionToken, login, signup, logout, updateProfile, updateWallet, isLoading }}>
       {children}
     </AuthContext.Provider>
   );
