@@ -34,17 +34,19 @@ export const login = api<LoginRequest, LoginResponse>(
       wallet_balance_usd: number;
       wallet_balance_zwl: number;
     }>`
-      SELECT id, email, name, role, wallet_balance_usd, wallet_balance_zwl
+      SELECT id, email, name, role, 
+             COALESCE(wallet_balance_usd, 0) as wallet_balance_usd, 
+             COALESCE(wallet_balance_zwl, 0) as wallet_balance_zwl
       FROM users 
       WHERE email = ${req.email}
     `;
     
     if (!user) {
-      throw APIError.notFound("Invalid credentials");
+      throw APIError.invalidArgument("Invalid credentials");
     }
     
     // In a real implementation, you would verify the password hash
-    // For demo purposes, we accept any password
+    // For demo purposes, we accept any password for existing users
     
     // Generate session token
     const sessionToken = crypto.randomBytes(32).toString('hex');

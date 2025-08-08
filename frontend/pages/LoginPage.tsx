@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate, Navigate } from "react-router-dom";
 import { Bus, Mail, Lock, User, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "../hooks/useAuth";
+import backend from "~backend/client";
 
 interface DemoUser {
   id: string;
@@ -44,7 +45,7 @@ const demoUsers: DemoUser[] = [
     name: "Robert Smith",
     email: "driver1@example.com",
     role: "driver", 
-    description: "Driver assigned to Bus 123"
+    description: "Driver assigned to Bus ABC-123H"
   },
   {
     id: "demo-driver",
@@ -92,9 +93,27 @@ export default function LoginPage() {
   const [phone, setPhone] = useState("");
   const [selectedDemoUser, setSelectedDemoUser] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isSeeding, setIsSeeding] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user, login, signup } = useAuth();
+
+  // Seed data on component mount
+  useEffect(() => {
+    const seedDatabase = async () => {
+      setIsSeeding(true);
+      try {
+        await backend.data.seedData();
+        console.log("Database seeded successfully");
+      } catch (error) {
+        console.error("Failed to seed database:", error);
+      } finally {
+        setIsSeeding(false);
+      }
+    };
+
+    seedDatabase();
+  }, []);
 
   // Redirect if already logged in
   if (user) {
@@ -229,6 +248,19 @@ export default function LoginPage() {
       default: return "text-gray-600";
     }
   };
+
+  if (isSeeding) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+        <Card className="w-full max-w-md">
+          <CardContent className="text-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Setting up demo data...</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
@@ -455,7 +487,7 @@ export default function LoginPage() {
             <p className="text-sm text-gray-600">
               {isSignup 
                 ? "Create an account to get started with the School Run Bus App" 
-                : "Demo credentials: Any email/password combination works"}
+                : "Demo credentials: Any email/password combination works for existing users"}
             </p>
           </div>
         </CardContent>

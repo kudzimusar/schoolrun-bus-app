@@ -25,7 +25,10 @@ export const seedData = api<void, { message: string }>(
       ON CONFLICT (id) DO UPDATE SET
         wallet_balance_usd = EXCLUDED.wallet_balance_usd,
         wallet_balance_zwl = EXCLUDED.wallet_balance_zwl,
-        phone = EXCLUDED.phone
+        phone = EXCLUDED.phone,
+        name = EXCLUDED.name,
+        role = EXCLUDED.role,
+        email = EXCLUDED.email
     `;
 
     // Create sample buses with Zimbabwe license plates
@@ -49,7 +52,12 @@ export const seedData = api<void, { message: string }>(
       (3, 2, 'Lily Chen', 1, 2, 3),
       (4, 6, 'Demo Child 1', 1, 1, 1),
       (5, 6, 'Demo Child 2', 1, 2, 2)
-      ON CONFLICT (id) DO NOTHING
+      ON CONFLICT (id) DO UPDATE SET
+        parent_id = EXCLUDED.parent_id,
+        name = EXCLUDED.name,
+        school_id = EXCLUDED.school_id,
+        bus_id = EXCLUDED.bus_id,
+        bus_stop_id = EXCLUDED.bus_stop_id
     `;
 
     // Create sample routes with Harare locations
