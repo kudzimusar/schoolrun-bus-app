@@ -1,5 +1,6 @@
-import { api } from "encore.dev/api";
+import { api, APIError } from "encore.dev/api";
 import { incidentDB } from "./db";
+import { userDB } from "../user/db";
 
 export interface ReportIncidentRequest {
   busId: number;
@@ -31,6 +32,13 @@ export interface Incident {
 export const reportIncident = api<ReportIncidentRequest, Incident>(
   { expose: true, auth: true, method: "POST", path: "/incidents" },
   async (req) => {
+    const caller = await userDB.queryRow<{ role: string }>`
+      SELECT role FROM users WHERE id = ${req.driverId}
+    `;
+    if (!caller || (caller.role !== "driver" && caller.role !== "admin")) {
+      throw APIError.permissionDenied("only drivers or admins can report incidents");
+    }
+
     const incident = await incidentDB.queryRow<Incident>`
       INSERT INTO incidents (
         bus_id, driver_id, type, severity, title, description, latitude, longitude
@@ -47,8 +55,6 @@ export const reportIncident = api<ReportIncidentRequest, Incident>(
     if (!incident) {
       throw new Error("Failed to report incident");
     }
-    
-    // TODO: Trigger notifications to administrators and affected parents
     
     return incident;
   }

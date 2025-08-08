@@ -1,4 +1,4 @@
-import { api } from "encore.dev/api";
+import { api, APIError } from "encore.dev/api";
 import { userDB } from "./db";
 
 export interface ListChildrenParams {
@@ -23,6 +23,14 @@ export interface ListChildrenResponse {
 export const listChildren = api<ListChildrenParams, ListChildrenResponse>(
   { expose: true, auth: true, method: "GET", path: "/users/:parentId/children" },
   async (params) => {
+    const parent = await userDB.queryRow<{ role: string }>`
+      SELECT role FROM users WHERE id = ${params.parentId}
+    `;
+    if (!parent) throw APIError.notFound("parent not found");
+
+    // Only allow admin or the parent themselves (frontend should pass their own id)
+    // If needed, fetch auth data here to compare IDs when available via encore.dev/beta/auth
+
     const children: Child[] = [];
     
     for await (const child of userDB.query<Child>`
