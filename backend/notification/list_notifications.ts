@@ -22,7 +22,7 @@ export interface ListNotificationsResponse {
 
 // Retrieves all notifications for a user.
 export const listNotifications = api<ListNotificationsParams, ListNotificationsResponse>(
-  { expose: true, method: "GET", path: "/notifications/user/:userId" },
+  { expose: true, auth: true, method: "GET", path: "/notifications/user/:userId" },
   async (params) => {
     const notifications: Notification[] = [];
     

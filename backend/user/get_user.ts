@@ -19,7 +19,7 @@ export interface User {
 
 // Retrieves a user by their ID.
 export const getUser = api<GetUserParams, User>(
-  { expose: true, method: "GET", path: "/users/:id" },
+  { expose: true, auth: true, method: "GET", path: "/users/:id" },
   async (params) => {
     const user = await userDB.queryRow<User>`
       SELECT id, email, name, role, phone, 

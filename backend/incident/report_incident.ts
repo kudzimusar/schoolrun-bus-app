@@ -29,7 +29,7 @@ export interface Incident {
 
 // Reports a new incident from a bus driver.
 export const reportIncident = api<ReportIncidentRequest, Incident>(
-  { expose: true, method: "POST", path: "/incidents" },
+  { expose: true, auth: true, method: "POST", path: "/incidents" },
   async (req) => {
     const incident = await incidentDB.queryRow<Incident>`
       INSERT INTO incidents (

@@ -21,7 +21,7 @@ export interface ListChildrenResponse {
 
 // Retrieves all children for a parent.
 export const listChildren = api<ListChildrenParams, ListChildrenResponse>(
-  { expose: true, method: "GET", path: "/users/:parentId/children" },
+  { expose: true, auth: true, method: "GET", path: "/users/:parentId/children" },
   async (params) => {
     const children: Child[] = [];
     
