@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import backend from "~backend/client";
+import Header from "../components/Header";
 import LoadingSpinner from "../components/LoadingSpinner";
 
 export default function AdminDashboard() {
@@ -45,29 +46,22 @@ export default function AdminDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="bg-white shadow-sm border-b">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold text-gray-900">Administrator Dashboard</h1>
-            <div className="flex items-center space-x-4">
-              <Link to="/admin-dashboard/routes">
-                <Button variant="outline">
-                  <Route className="h-4 w-4 mr-2" />
-                  Manage Routes
-                </Button>
-              </Link>
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Bus
-              </Button>
-              <Button variant="outline">
-                <Settings className="h-4 w-4 mr-2" />
-                Settings
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
+      <Header title="Administrator Dashboard">
+        <Link to="/admin-dashboard/routes">
+          <Button variant="outline">
+            <Route className="h-4 w-4 mr-2" />
+            Manage Routes
+          </Button>
+        </Link>
+        <Button>
+          <Plus className="h-4 w-4 mr-2" />
+          Add Bus
+        </Button>
+        <Button variant="outline">
+          <Settings className="h-4 w-4 mr-2" />
+          Settings
+        </Button>
+      </Header>
 
       <div className="container mx-auto px-4 py-6">
         {/* Critical Incidents Alert */}

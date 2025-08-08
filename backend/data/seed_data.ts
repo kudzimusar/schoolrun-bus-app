@@ -17,7 +17,11 @@ export const seedData = api<void, { message: string }>(
       (2, 'parent2@example.com', 'Michael Chen', 'parent', '+1234567891'),
       (3, 'driver1@example.com', 'Robert Smith', 'driver', '+1234567892'),
       (4, 'admin1@example.com', 'Lisa Anderson', 'admin', '+1234567893'),
-      (5, 'operator1@example.com', 'David Wilson', 'operator', '+1234567894')
+      (5, 'operator1@example.com', 'David Wilson', 'operator', '+1234567894'),
+      (6, 'demo-parent@example.com', 'Demo Parent', 'parent', '+1234567895'),
+      (7, 'demo-driver@example.com', 'Demo Driver', 'driver', '+1234567896'),
+      (8, 'demo-admin@example.com', 'Demo Admin', 'admin', '+1234567897'),
+      (9, 'demo-operator@example.com', 'Demo Operator', 'operator', '+1234567898')
       ON CONFLICT (id) DO NOTHING
     `;
 
@@ -25,7 +29,7 @@ export const seedData = api<void, { message: string }>(
     await busDB.exec`
       INSERT INTO buses (id, number, driver_id, capacity, status) VALUES
       (1, '123', 3, 50, 'active'),
-      (2, '456', NULL, 45, 'active'),
+      (2, '456', 7, 45, 'active'),
       (3, '789', NULL, 55, 'maintenance')
       ON CONFLICT (id) DO NOTHING
     `;
@@ -35,7 +39,9 @@ export const seedData = api<void, { message: string }>(
       INSERT INTO children (id, parent_id, name, school_id, bus_id, bus_stop_id) VALUES
       (1, 1, 'Emma Johnson', 1, 1, 1),
       (2, 1, 'Jake Johnson', 1, 1, 2),
-      (3, 2, 'Lily Chen', 1, 2, 3)
+      (3, 2, 'Lily Chen', 1, 2, 3),
+      (4, 6, 'Demo Child 1', 1, 1, 1),
+      (5, 6, 'Demo Child 2', 1, 2, 2)
       ON CONFLICT (id) DO NOTHING
     `;
 
@@ -88,7 +94,9 @@ export const seedData = api<void, { message: string }>(
       (1, 'bus_approaching', 'Bus Approaching', 'Bus 123 is 5 minutes away from your stop', 1, false, NOW() - INTERVAL '5 minutes'),
       (1, 'bus_arrived', 'Bus Arrived', 'Bus 123 has arrived at Maple Street & Oak Avenue', 1, true, NOW() - INTERVAL '2 hours'),
       (1, 'bus_delayed', 'Bus Delayed', 'Bus 123 is running 10 minutes late due to traffic', 1, true, NOW() - INTERVAL '1 day'),
-      (2, 'route_changed', 'Route Change', 'Morning route has been updated due to construction', 2, false, NOW() - INTERVAL '3 hours')
+      (2, 'route_changed', 'Route Change', 'Morning route has been updated due to construction', 2, false, NOW() - INTERVAL '3 hours'),
+      (6, 'bus_approaching', 'Bus Approaching', 'Bus 123 is 3 minutes away from your stop', 1, false, NOW() - INTERVAL '3 minutes'),
+      (6, 'bus_arrived', 'Bus Arrived', 'Bus 456 has arrived at Pine Street & Elm Avenue', 2, true, NOW() - INTERVAL '1 hour')
       ON CONFLICT DO NOTHING
     `;
 
@@ -108,6 +116,6 @@ export const seedData = api<void, { message: string }>(
         unit = EXCLUDED.unit
     `;
 
-    return { message: "Sample data seeded successfully with enhanced features" };
+    return { message: "Sample data seeded successfully with enhanced features and demo accounts" };
   }
 );

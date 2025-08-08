@@ -8,12 +8,16 @@ import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import backend from "~backend/client";
 import Navigation from "../components/Navigation";
+import Header from "../components/Header";
 import LoadingSpinner from "../components/LoadingSpinner";
+import { useAuth } from "../hooks/useAuth";
 
 export default function ParentDashboard() {
+  const { user } = useAuth();
+  
   const { data: children, isLoading: childrenLoading } = useQuery({
-    queryKey: ["children", 1], // Using hardcoded parent ID for demo
-    queryFn: () => backend.user.listChildren({ parentId: 1 }),
+    queryKey: ["children", user?.id || 1],
+    queryFn: () => backend.user.listChildren({ parentId: user?.id || 1 }),
   });
 
   const { data: locations, isLoading: locationsLoading } = useQuery({
@@ -22,8 +26,8 @@ export default function ParentDashboard() {
   });
 
   const { data: notifications } = useQuery({
-    queryKey: ["notifications", 1], // Using hardcoded user ID for demo
-    queryFn: () => backend.notification.listNotifications({ userId: 1 }),
+    queryKey: ["notifications", user?.id || 1],
+    queryFn: () => backend.notification.listNotifications({ userId: user?.id || 1 }),
   });
 
   const { data: incidents } = useQuery({
@@ -56,32 +60,25 @@ export default function ParentDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
-      <div className="bg-white shadow-sm border-b">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold text-gray-900">Parent Dashboard</h1>
-            <div className="flex items-center space-x-4">
-              <Link to="/parent-dashboard/notifications-history">
-                <Button variant="outline" size="sm" className="relative">
-                  <Bell className="h-4 w-4 mr-2" />
-                  Notifications
-                  {unreadCount > 0 && (
-                    <Badge className="absolute -top-2 -right-2 h-5 w-5 rounded-full p-0 text-xs">
-                      {unreadCount}
-                    </Badge>
-                  )}
-                </Button>
-              </Link>
-              <Link to="/parent-dashboard/settings">
-                <Button variant="outline" size="sm">
-                  <Settings className="h-4 w-4 mr-2" />
-                  Settings
-                </Button>
-              </Link>
-            </div>
-          </div>
-        </div>
-      </div>
+      <Header title="Parent Dashboard">
+        <Link to="/parent-dashboard/notifications-history">
+          <Button variant="outline" size="sm" className="relative">
+            <Bell className="h-4 w-4 mr-2" />
+            Notifications
+            {unreadCount > 0 && (
+              <Badge className="absolute -top-2 -right-2 h-5 w-5 rounded-full p-0 text-xs">
+                {unreadCount}
+              </Badge>
+            )}
+          </Button>
+        </Link>
+        <Link to="/parent-dashboard/settings">
+          <Button variant="outline" size="sm">
+            <Settings className="h-4 w-4 mr-2" />
+            Settings
+          </Button>
+        </Link>
+      </Header>
 
       <div className="container mx-auto px-4 py-6">
         <div className="grid gap-6">

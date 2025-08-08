@@ -8,9 +8,11 @@ import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import backend from "~backend/client";
 import LoadingSpinner from "../components/LoadingSpinner";
+import { useAuth } from "../hooks/useAuth";
 
 export default function BusMap() {
   const location = useLocation();
+  const { user } = useAuth();
   const busId = location.state?.busId;
   const [mapCenter, setMapCenter] = useState({ lat: 40.7128, lng: -74.0060 }); // Default to NYC
 
@@ -56,7 +58,7 @@ export default function BusMap() {
         <Card>
           <CardContent className="text-center py-8">
             <p className="text-gray-500">No bus selected</p>
-            <Link to="/parent-dashboard">
+            <Link to={`/${user?.role}-dashboard`}>
               <Button className="mt-4">Back to Dashboard</Button>
             </Link>
           </CardContent>
@@ -83,7 +85,7 @@ export default function BusMap() {
       <div className="bg-white shadow-sm border-b">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center">
-            <Link to="/parent-dashboard">
+            <Link to={`/${user?.role}-dashboard`}>
               <Button variant="ghost" size="sm" className="mr-4">
                 <ArrowLeft className="h-4 w-4" />
               </Button>

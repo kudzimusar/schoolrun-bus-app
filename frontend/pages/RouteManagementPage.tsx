@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/components/ui/use-toast";
+import { useAuth } from "../hooks/useAuth";
 
 interface Route {
   id: number;
@@ -27,6 +28,7 @@ interface BusStop {
 }
 
 export default function RouteManagementPage() {
+  const { user } = useAuth();
   const [routes] = useState<Route[]>([
     { id: 1, name: "Route A - Morning", busNumber: "123", type: "morning", stops: 8, isActive: true },
     { id: 2, name: "Route A - Afternoon", busNumber: "123", type: "afternoon", stops: 8, isActive: true },
@@ -78,7 +80,7 @@ export default function RouteManagementPage() {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center">
-              <Link to="/admin-dashboard">
+              <Link to={`/${user?.role}-dashboard`}>
                 <Button variant="ghost" size="sm" className="mr-4">
                   <ArrowLeft className="h-4 w-4" />
                 </Button>

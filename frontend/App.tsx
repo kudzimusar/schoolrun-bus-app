@@ -2,6 +2,8 @@ import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
+import { AuthProvider } from "./hooks/useAuth";
+import ProtectedRoute from "./components/ProtectedRoute";
 import HomePage from "./pages/HomePage";
 import LoginPage from "./pages/LoginPage";
 import ParentDashboard from "./pages/ParentDashboard";
@@ -11,6 +13,8 @@ import BusMap from "./pages/BusMap";
 import NotificationsHistory from "./pages/NotificationsHistory";
 import SettingsPage from "./pages/SettingsPage";
 import RouteManagementPage from "./pages/RouteManagementPage";
+import ProfilePage from "./pages/ProfilePage";
+import UnauthorizedPage from "./pages/UnauthorizedPage";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -24,12 +28,14 @@ const queryClient = new QueryClient({
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <Router>
-        <div className="min-h-screen bg-gray-50">
-          <AppInner />
-        </div>
-        <Toaster />
-      </Router>
+      <AuthProvider>
+        <Router>
+          <div className="min-h-screen bg-gray-50">
+            <AppInner />
+          </div>
+          <Toaster />
+        </Router>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }
@@ -39,13 +45,52 @@ function AppInner() {
     <Routes>
       <Route path="/" element={<HomePage />} />
       <Route path="/login" element={<LoginPage />} />
-      <Route path="/parent-dashboard" element={<ParentDashboard />} />
-      <Route path="/parent-dashboard/bus-map" element={<BusMap />} />
-      <Route path="/parent-dashboard/notifications-history" element={<NotificationsHistory />} />
-      <Route path="/parent-dashboard/settings" element={<SettingsPage />} />
-      <Route path="/driver-dashboard" element={<DriverDashboard />} />
-      <Route path="/admin-dashboard" element={<AdminDashboard />} />
-      <Route path="/admin-dashboard/routes" element={<RouteManagementPage />} />
+      <Route path="/unauthorized" element={<UnauthorizedPage />} />
+      <Route path="/profile" element={
+        <ProtectedRoute>
+          <ProfilePage />
+        </ProtectedRoute>
+      } />
+      <Route path="/parent-dashboard" element={
+        <ProtectedRoute allowedRoles={["parent"]}>
+          <ParentDashboard />
+        </ProtectedRoute>
+      } />
+      <Route path="/parent-dashboard/bus-map" element={
+        <ProtectedRoute allowedRoles={["parent"]}>
+          <BusMap />
+        </ProtectedRoute>
+      } />
+      <Route path="/parent-dashboard/notifications-history" element={
+        <ProtectedRoute allowedRoles={["parent"]}>
+          <NotificationsHistory />
+        </ProtectedRoute>
+      } />
+      <Route path="/parent-dashboard/settings" element={
+        <ProtectedRoute allowedRoles={["parent"]}>
+          <SettingsPage />
+        </ProtectedRoute>
+      } />
+      <Route path="/driver-dashboard" element={
+        <ProtectedRoute allowedRoles={["driver"]}>
+          <DriverDashboard />
+        </ProtectedRoute>
+      } />
+      <Route path="/admin-dashboard" element={
+        <ProtectedRoute allowedRoles={["admin", "operator"]}>
+          <AdminDashboard />
+        </ProtectedRoute>
+      } />
+      <Route path="/admin-dashboard/routes" element={
+        <ProtectedRoute allowedRoles={["admin", "operator"]}>
+          <RouteManagementPage />
+        </ProtectedRoute>
+      } />
+      <Route path="/settings" element={
+        <ProtectedRoute>
+          <SettingsPage />
+        </ProtectedRoute>
+      } />
     </Routes>
   );
 }

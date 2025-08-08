@@ -10,9 +10,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
 import backend from "~backend/client";
+import Header from "../components/Header";
 import LoadingSpinner from "../components/LoadingSpinner";
+import { useAuth } from "../hooks/useAuth";
 
 export default function DriverDashboard() {
+  const { user } = useAuth();
   const [incidentType, setIncidentType] = useState("");
   const [incidentDescription, setIncidentDescription] = useState("");
   const [isReportingIncident, setIsReportingIncident] = useState(false);
@@ -61,7 +64,7 @@ export default function DriverDashboard() {
     try {
       await backend.incident.reportIncident({
         busId: assignedBus.id,
-        driverId: 3, // Hardcoded driver ID for demo
+        driverId: user?.id || 3,
         type: incidentType as any,
         severity: "medium",
         title: `${incidentType.replace('_', ' ')} reported`,
@@ -128,17 +131,12 @@ export default function DriverDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="bg-white shadow-sm border-b">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold text-gray-900">Driver Dashboard</h1>
-            <Button variant="outline" onClick={handleEmergencyAlert} className="bg-red-50 border-red-200 text-red-700 hover:bg-red-100">
-              <Phone className="h-4 w-4 mr-2" />
-              Emergency
-            </Button>
-          </div>
-        </div>
-      </div>
+      <Header title="Driver Dashboard">
+        <Button variant="outline" onClick={handleEmergencyAlert} className="bg-red-50 border-red-200 text-red-700 hover:bg-red-100">
+          <Phone className="h-4 w-4 mr-2" />
+          Emergency
+        </Button>
+      </Header>
 
       <div className="container mx-auto px-4 py-6">
         <div className="grid gap-6">

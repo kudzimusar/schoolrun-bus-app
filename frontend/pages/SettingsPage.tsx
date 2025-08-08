@@ -8,8 +8,10 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/components/ui/use-toast";
+import { useAuth } from "../hooks/useAuth";
 
 export default function SettingsPage() {
+  const { user } = useAuth();
   const [notifications, setNotifications] = useState({
     busApproaching: true,
     busArrived: true,
@@ -19,8 +21,8 @@ export default function SettingsPage() {
   });
   const [approachTime, setApproachTime] = useState("5");
   const [profile, setProfile] = useState({
-    name: "Sarah Johnson",
-    email: "sarah.johnson@example.com",
+    name: user?.name || "Sarah Johnson",
+    email: user?.email || "sarah.johnson@example.com",
     phone: "+1 (555) 123-4567",
   });
   const { toast } = useToast();
@@ -29,11 +31,30 @@ export default function SettingsPage() {
     setNotifications(prev => ({ ...prev, [key]: value }));
   };
 
-  const handleSaveNotifications = () => {
-    toast({
-      title: "Settings saved",
-      description: "Your notification preferences have been updated.",
-    });
+  const handleSaveNotifications = async () => {
+    try {
+      await backend.notification.updatePreferences({
+        userId: user?.id || 1,
+        busApproaching: notifications.busApproaching,
+        busArrived: notifications.busArrived,
+        busDelayed: notifications.busDelayed,
+        routeChanged: notifications.routeChanged,
+        emergency: notifications.emergency,
+        approachTimeMinutes: parseInt(approachTime),
+      });
+      
+      toast({
+        title: "Settings saved",
+        description: "Your notification preferences have been updated.",
+      });
+    } catch (error) {
+      console.error("Failed to save notification preferences:", error);
+      toast({
+        title: "Error",
+        description: "Failed to save notification preferences.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleSaveProfile = () => {
@@ -48,7 +69,7 @@ export default function SettingsPage() {
       <div className="bg-white shadow-sm border-b">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center">
-            <Link to="/parent-dashboard">
+            <Link to={`/${user?.role}-dashboard`}>
               <Button variant="ghost" size="sm" className="mr-4">
                 <ArrowLeft className="h-4 w-4" />
               </Button>

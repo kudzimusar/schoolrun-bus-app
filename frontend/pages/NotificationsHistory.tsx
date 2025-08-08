@@ -7,11 +7,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import backend from "~backend/client";
 import LoadingSpinner from "../components/LoadingSpinner";
+import { useAuth } from "../hooks/useAuth";
 
 export default function NotificationsHistory() {
+  const { user } = useAuth();
+  
   const { data: notifications, isLoading } = useQuery({
-    queryKey: ["notifications", 1], // Using hardcoded user ID for demo
-    queryFn: () => backend.notification.listNotifications({ userId: 1 }),
+    queryKey: ["notifications", user?.id || 1],
+    queryFn: () => backend.notification.listNotifications({ userId: user?.id || 1 }),
   });
 
   const handleMarkAsRead = async (notificationId: number) => {
@@ -54,7 +57,7 @@ export default function NotificationsHistory() {
       <div className="bg-white shadow-sm border-b">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center">
-            <Link to="/parent-dashboard">
+            <Link to={`/${user?.role}-dashboard`}>
               <Button variant="ghost" size="sm" className="mr-4">
                 <ArrowLeft className="h-4 w-4" />
               </Button>
