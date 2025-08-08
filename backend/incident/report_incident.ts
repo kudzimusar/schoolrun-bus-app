@@ -1,6 +1,9 @@
 import { api, APIError } from "encore.dev/api";
 import { incidentDB } from "./db";
 import { userDB } from "../user/db";
+import { secret } from "encore.dev/config";
+
+const MapboxAccessToken = secret("MapboxAccessToken");
 
 export interface ReportIncidentRequest {
   busId: number;
@@ -28,6 +31,17 @@ export interface Incident {
   createdAt: Date;
 }
 
+async function reverseGeocode(lat?: number, lon?: number): Promise<string | undefined> {
+  const token = MapboxAccessToken();
+  if (!token || lat === undefined || lon === undefined) return undefined;
+  const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${lon},${lat}.json?access_token=${token}`;
+  const resp = await fetch(url);
+  if (!resp.ok) return undefined;
+  const data: any = await resp.json();
+  const place = data?.features?.[0]?.place_name as string | undefined;
+  return place;
+}
+
 // Reports a new incident from a bus driver.
 export const reportIncident = api<ReportIncidentRequest, Incident>(
   { expose: true, auth: true, method: "POST", path: "/incidents" },
@@ -39,13 +53,15 @@ export const reportIncident = api<ReportIncidentRequest, Incident>(
       throw APIError.permissionDenied("only drivers or admins can report incidents");
     }
 
+    const locationName = await reverseGeocode(req.latitude, req.longitude).catch(() => undefined);
+
     const incident = await incidentDB.queryRow<Incident>`
       INSERT INTO incidents (
-        bus_id, driver_id, type, severity, title, description, latitude, longitude
+        bus_id, driver_id, type, severity, title, description, latitude, longitude, location_name
       )
       VALUES (
         ${req.busId}, ${req.driverId}, ${req.type}, ${req.severity}, 
-        ${req.title}, ${req.description}, ${req.latitude}, ${req.longitude}
+        ${req.title}, ${req.description}, ${req.latitude}, ${req.longitude}, ${locationName}
       )
       RETURNING id, bus_id as "busId", driver_id as "driverId", type, severity, 
                 title, description, latitude, longitude, status, 
