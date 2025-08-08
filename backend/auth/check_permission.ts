@@ -1,5 +1,6 @@
 import { api, APIError } from "encore.dev/api";
 import { authDB } from "./db";
+import { userDB } from "../user/db";
 
 export interface CheckPermissionRequest {
   sessionToken: string;
@@ -28,10 +29,10 @@ export const checkPermission = api<CheckPermissionRequest, PermissionResponse>(
       throw APIError.unauthenticated("Invalid or expired session");
     }
     
-    const user = await authDB.queryRow<{ role: string }>`
-      SELECT u.role
-      FROM users u
-      WHERE u.id = ${session.userId}
+    const user = await userDB.queryRow<{ role: string }>`
+      SELECT role
+      FROM users
+      WHERE id = ${session.userId}
     `;
     
     if (!user) {

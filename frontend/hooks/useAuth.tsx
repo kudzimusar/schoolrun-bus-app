@@ -12,6 +12,7 @@ interface AuthContextType {
   user: User | null;
   sessionToken: string | null;
   login: (email: string, password: string) => Promise<void>;
+  signup: (email: string, password: string, name: string, role: string, phone?: string) => Promise<void>;
   logout: () => Promise<void>;
   updateProfile: (data: { name?: string; email?: string; phone?: string }) => Promise<void>;
   isLoading: boolean;
@@ -48,6 +49,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       localStorage.setItem("user", JSON.stringify(response.user));
     } catch (error) {
       console.error("Login failed:", error);
+      throw error;
+    }
+  };
+
+  const signup = async (email: string, password: string, name: string, role: string, phone?: string) => {
+    try {
+      const response = await backend.auth.signup({ 
+        email, 
+        password, 
+        name, 
+        role: role as "parent" | "driver" | "admin" | "operator",
+        phone 
+      });
+      
+      setUser(response.user);
+      setSessionToken(response.sessionToken);
+      
+      // Store in localStorage for persistence
+      localStorage.setItem("sessionToken", response.sessionToken);
+      localStorage.setItem("user", JSON.stringify(response.user));
+    } catch (error) {
+      console.error("Signup failed:", error);
       throw error;
     }
   };
@@ -91,6 +114,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       user,
       sessionToken,
       login,
+      signup,
       logout,
       updateProfile,
       isLoading

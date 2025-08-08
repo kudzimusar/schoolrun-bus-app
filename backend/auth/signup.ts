@@ -1,14 +1,17 @@
-import { api, APIError } from "encore.dev/api";
+import { api } from "encore.dev/api";
 import { authDB } from "./db";
 import { userDB } from "../user/db";
 import crypto from "crypto";
 
-export interface LoginRequest {
+export interface SignupRequest {
   email: string;
   password: string;
+  name: string;
+  role: "parent" | "driver" | "admin" | "operator";
+  phone?: string;
 }
 
-export interface LoginResponse {
+export interface SignupResponse {
   user: {
     id: number;
     email: string;
@@ -19,28 +22,34 @@ export interface LoginResponse {
   expiresAt: Date;
 }
 
-// Authenticates a user and creates a session.
-export const login = api<LoginRequest, LoginResponse>(
-  { expose: true, method: "POST", path: "/auth/login" },
+// Creates a new user account and logs them in.
+export const signup = api<SignupRequest, SignupResponse>(
+  { expose: true, method: "POST", path: "/auth/signup" },
   async (req) => {
-    // Get user by email
+    // Check if user already exists
+    const existingUser = await userDB.queryRow<{ id: number }>`
+      SELECT id FROM users WHERE email = ${req.email}
+    `;
+    
+    if (existingUser) {
+      throw new Error("User with this email already exists");
+    }
+    
+    // Create new user
     const user = await userDB.queryRow<{
       id: number;
       email: string;
       name: string;
       role: string;
     }>`
-      SELECT id, email, name, role
-      FROM users 
-      WHERE email = ${req.email}
+      INSERT INTO users (email, name, role, phone)
+      VALUES (${req.email}, ${req.name}, ${req.role}, ${req.phone})
+      RETURNING id, email, name, role
     `;
     
     if (!user) {
-      throw APIError.notFound("Invalid credentials");
+      throw new Error("Failed to create user");
     }
-    
-    // In a real implementation, you would verify the password hash
-    // For demo purposes, we accept any password
     
     // Generate session token
     const sessionToken = crypto.randomBytes(32).toString('hex');

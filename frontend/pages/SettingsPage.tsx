@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "../hooks/useAuth";
+import backend from "~backend/client";
 
 export default function SettingsPage() {
   const { user } = useAuth();
