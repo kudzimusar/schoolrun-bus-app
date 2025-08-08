@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate, Navigate } from "react-router-dom";
-import { Bus, Mail, Lock, User } from "lucide-react";
+import { Bus, Mail, Lock, User, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -9,6 +9,80 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "../hooks/useAuth";
 
+interface DemoUser {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  description: string;
+}
+
+const demoUsers: DemoUser[] = [
+  {
+    id: "parent1",
+    name: "Sarah Johnson",
+    email: "parent1@example.com",
+    role: "parent",
+    description: "Parent with 2 children (Emma & Jake)"
+  },
+  {
+    id: "parent2", 
+    name: "Michael Chen",
+    email: "parent2@example.com",
+    role: "parent",
+    description: "Parent with 1 child (Lily)"
+  },
+  {
+    id: "demo-parent",
+    name: "Demo Parent",
+    email: "demo-parent@example.com", 
+    role: "parent",
+    description: "Demo parent account with sample data"
+  },
+  {
+    id: "driver1",
+    name: "Robert Smith",
+    email: "driver1@example.com",
+    role: "driver", 
+    description: "Driver assigned to Bus 123"
+  },
+  {
+    id: "demo-driver",
+    name: "Demo Driver",
+    email: "demo-driver@example.com",
+    role: "driver",
+    description: "Demo driver account with sample routes"
+  },
+  {
+    id: "admin1",
+    name: "Lisa Anderson", 
+    email: "admin1@example.com",
+    role: "admin",
+    description: "School administrator"
+  },
+  {
+    id: "demo-admin",
+    name: "Demo Admin",
+    email: "demo-admin@example.com",
+    role: "admin", 
+    description: "Demo admin account with full access"
+  },
+  {
+    id: "operator1",
+    name: "David Wilson",
+    email: "operator1@example.com",
+    role: "operator",
+    description: "Transport operator with fleet management"
+  },
+  {
+    id: "demo-operator",
+    name: "Demo Operator",
+    email: "demo-operator@example.com",
+    role: "operator",
+    description: "Demo operator account with system access"
+  }
+];
+
 export default function LoginPage() {
   const [isSignup, setIsSignup] = useState(false);
   const [email, setEmail] = useState("");
@@ -16,6 +90,7 @@ export default function LoginPage() {
   const [name, setName] = useState("");
   const [role, setRole] = useState("");
   const [phone, setPhone] = useState("");
+  const [selectedDemoUser, setSelectedDemoUser] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -100,6 +175,38 @@ export default function LoginPage() {
     }
   };
 
+  const handleQuickLogin = async () => {
+    if (!selectedDemoUser) {
+      toast({
+        title: "No user selected",
+        description: "Please select a user from the dropdown",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const demoUser = demoUsers.find(u => u.id === selectedDemoUser);
+    if (!demoUser) return;
+
+    setIsLoading(true);
+    try {
+      await login(demoUser.email, "demo123");
+      toast({
+        title: "Quick login successful",
+        description: `Logged in as ${demoUser.name}`,
+      });
+    } catch (error) {
+      console.error("Quick login error:", error);
+      toast({
+        title: "Quick login failed",
+        description: "Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const resetForm = () => {
     setEmail("");
     setPassword("");
@@ -111,6 +218,16 @@ export default function LoginPage() {
   const toggleMode = () => {
     setIsSignup(!isSignup);
     resetForm();
+  };
+
+  const getRoleColor = (role: string) => {
+    switch (role) {
+      case "parent": return "text-blue-600";
+      case "driver": return "text-green-600";
+      case "admin": return "text-purple-600";
+      case "operator": return "text-orange-600";
+      default: return "text-gray-600";
+    }
   };
 
   return (
@@ -126,6 +243,63 @@ export default function LoginPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {/* Quick Access Section */}
+          <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+            <div className="flex items-center mb-3">
+              <Users className="h-5 w-5 text-blue-600 mr-2" />
+              <h3 className="font-medium text-blue-900">Quick Access</h3>
+            </div>
+            <div className="space-y-3">
+              <div className="space-y-2">
+                <Label htmlFor="demo-user-select" className="text-sm text-blue-800">
+                  Select a demo user to login instantly:
+                </Label>
+                <Select value={selectedDemoUser} onValueChange={setSelectedDemoUser}>
+                  <SelectTrigger className="bg-white">
+                    <SelectValue placeholder="Choose a demo user..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {demoUsers.map((demoUser) => (
+                      <SelectItem key={demoUser.id} value={demoUser.id}>
+                        <div className="flex items-center justify-between w-full">
+                          <div>
+                            <span className="font-medium">{demoUser.name}</span>
+                            <span className={`ml-2 text-xs ${getRoleColor(demoUser.role)}`}>
+                              ({demoUser.role})
+                            </span>
+                          </div>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button 
+                onClick={handleQuickLogin} 
+                className="w-full bg-blue-600 hover:bg-blue-700"
+                disabled={isLoading || !selectedDemoUser}
+              >
+                {isLoading ? "Logging in..." : "Quick Login"}
+              </Button>
+            </div>
+            {selectedDemoUser && (
+              <div className="mt-3 p-2 bg-white rounded border">
+                <p className="text-xs text-gray-600">
+                  {demoUsers.find(u => u.id === selectedDemoUser)?.description}
+                </p>
+              </div>
+            )}
+          </div>
+
+          <div className="relative mb-6">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t border-gray-300" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-white px-2 text-gray-500">Or use manual login</span>
+            </div>
+          </div>
+
           <form onSubmit={handleSubmit} className="space-y-4">
             {isSignup && (
               <div className="space-y-2">
@@ -232,7 +406,7 @@ export default function LoginPage() {
                   <span className="w-full border-t" />
                 </div>
                 <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-white px-2 text-muted-foreground">Demo Accounts</span>
+                  <span className="bg-white px-2 text-muted-foreground">Quick Demo Access</span>
                 </div>
               </div>
               
@@ -242,6 +416,7 @@ export default function LoginPage() {
                   size="sm" 
                   onClick={() => handleDemoLogin("parent")}
                   disabled={isLoading}
+                  className="text-blue-600 border-blue-200 hover:bg-blue-50"
                 >
                   Demo Parent
                 </Button>
@@ -250,6 +425,7 @@ export default function LoginPage() {
                   size="sm" 
                   onClick={() => handleDemoLogin("driver")}
                   disabled={isLoading}
+                  className="text-green-600 border-green-200 hover:bg-green-50"
                 >
                   Demo Driver
                 </Button>
@@ -258,6 +434,7 @@ export default function LoginPage() {
                   size="sm" 
                   onClick={() => handleDemoLogin("admin")}
                   disabled={isLoading}
+                  className="text-purple-600 border-purple-200 hover:bg-purple-50"
                 >
                   Demo Admin
                 </Button>
@@ -266,6 +443,7 @@ export default function LoginPage() {
                   size="sm" 
                   onClick={() => handleDemoLogin("operator")}
                   disabled={isLoading}
+                  className="text-orange-600 border-orange-200 hover:bg-orange-50"
                 >
                   Demo Operator
                 </Button>
