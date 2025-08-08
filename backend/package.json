@@ -8,7 +8,8 @@
     "test": "bun test"
   },
   "dependencies": {
-    "encore.dev": "^1.48.12"
+    "encore.dev": "^1.48.12",
+    "jose": "^5.9.6"
   },
   "devDependencies": {
     "@types/node": "^24.2.0",
