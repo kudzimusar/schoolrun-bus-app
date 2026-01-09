@@ -10,13 +10,6 @@ import backend from "~backend/client";
 import LoadingSpinner from "../components/LoadingSpinner";
 import { useAuth } from "../hooks/useAuth";
 
-// Lazy load mapbox-gl only in browser
-let mapboxgl: any;
-if (typeof window !== "undefined") {
-  // @ts-ignore
-  mapboxgl = await import("mapbox-gl");
-}
-
 export default function BusMap() {
   const location = useLocation();
   const { user } = useAuth();
@@ -25,6 +18,16 @@ export default function BusMap() {
   const mapInstance = useRef<any>(null);
   const markerRef = useRef<any>(null);
   const [mapCenter, setMapCenter] = useState({ lat: 40.7128, lng: -74.0060 });
+  const [mapboxgl, setMapboxgl] = useState<any>(null);
+
+  // Load mapbox-gl dynamically
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      import("mapbox-gl").then((module) => {
+        setMapboxgl(module.default || module);
+      });
+    }
+  }, []);
 
   const { data: busLocation, isLoading } = useQuery({
     queryKey: ["busLocation", busId],
@@ -61,8 +64,7 @@ export default function BusMap() {
 
   // Initialize Mapbox
   useEffect(() => {
-    if (!mapRef.current || mapInstance.current || !import.meta.env.VITE_MAPBOX_TOKEN) return;
-    if (!mapboxgl) return;
+    if (!mapRef.current || mapInstance.current || !import.meta.env.VITE_MAPBOX_TOKEN || !mapboxgl) return;
 
     mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN;
     mapInstance.current = new mapboxgl.Map({
@@ -78,7 +80,7 @@ export default function BusMap() {
       mapInstance.current?.remove();
       mapInstance.current = null;
     };
-  }, []);
+  }, [mapboxgl]);
 
   // Update map center and marker on location changes
   useEffect(() => {
@@ -93,7 +95,7 @@ export default function BusMap() {
     } else {
       markerRef.current.setLngLat([mapCenter.lng, mapCenter.lat]);
     }
-  }, [mapCenter]);
+  }, [mapCenter, mapboxgl]);
 
   // Live updates via streaming endpoint
   useEffect(() => {

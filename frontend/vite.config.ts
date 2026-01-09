@@ -16,6 +16,7 @@ export default defineConfig(({ mode }) => ({
     react(),
   ],
   build: {
+    target: 'esnext',
     minify: mode === 'production',
   }
 }))
