@@ -2,6 +2,29 @@
 
 This project consists of an Encore application. Follow the steps below to get the app running locally.
 
+## Environment Variables and Secrets
+
+### Backend Secrets (Encore)
+The backend uses Encore secrets for sensitive information. To set them up locally, use the `encore secret set` command:
+
+```bash
+# Paynow Integration
+encore secret set PaynowIntegrationID --local
+encore secret set PaynowIntegrationKey --local
+
+# Mapbox Integration
+encore secret set MapboxAccessToken --local
+```
+
+### Frontend Environment Variables
+Create a `.env` file in the `frontend` directory based on `.env.example`:
+
+```bash
+cp frontend/.env.example frontend/.env
+```
+
+Then, edit `frontend/.env` and provide your `VITE_MAPBOX_TOKEN`.
+
 ## Prerequisites
 
 If this is your first time using Encore, you need to install the CLI that runs the local development environment. Use the appropriate command for your system:
