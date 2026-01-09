@@ -26,11 +26,14 @@ const queryClient = new QueryClient({
   },
 });
 
+// Determine the base name for the router
+const basename = import.meta.env.MODE === 'production' ? '/schoolrun-bus-app' : '';
+
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <Router>
+        <Router basename={basename}>
           <div className="min-h-screen bg-gray-50">
             <AppInner />
           </div>
