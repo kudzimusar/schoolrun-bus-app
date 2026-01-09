@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useLocation, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, MapPin, Clock, Navigation as NavigationIcon, AlertTriangle, Zap } from "lucide-react";
+import { ArrowLeft, MapPin, Clock, Navigation as NavigationIcon, AlertTriangle, Zap, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -19,6 +19,7 @@ export default function BusMap() {
   const markerRef = useRef<any>(null);
   const [mapCenter, setMapCenter] = useState({ lat: 40.7128, lng: -74.0060 });
   const [mapboxgl, setMapboxgl] = useState<any>(null);
+  const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
 
   // Load mapbox-gl dynamically
   useEffect(() => {
@@ -29,7 +30,7 @@ export default function BusMap() {
     }
   }, []);
 
-  const { data: busLocation, isLoading } = useQuery({
+  const { data: busLocation, isLoading, refetch } = useQuery({
     queryKey: ["busLocation", busId],
     queryFn: () => backend.location.getBusLocation({ busId }),
     enabled: !!busId,
@@ -59,6 +60,7 @@ export default function BusMap() {
   useEffect(() => {
     if (busLocation) {
       setMapCenter({ lat: busLocation.latitude, lng: busLocation.longitude });
+      setLastUpdated(new Date(busLocation.lastUpdated));
     }
   }, [busLocation]);
 
@@ -71,7 +73,7 @@ export default function BusMap() {
       container: mapRef.current,
       style: "mapbox://styles/mapbox/streets-v11",
       center: [mapCenter.lng, mapCenter.lat],
-      zoom: 13,
+      zoom: 14,
     });
 
     mapInstance.current.addControl(new mapboxgl.NavigationControl());
@@ -86,15 +88,33 @@ export default function BusMap() {
   useEffect(() => {
     if (!mapInstance.current || !mapboxgl) return;
 
-    mapInstance.current.setCenter([mapCenter.lng, mapCenter.lat]);
-
+    // Smoothly move the marker
     if (!markerRef.current) {
-      markerRef.current = new mapboxgl.Marker({ color: "#2563eb" })
+      const el = document.createElement('div');
+      el.className = 'bus-marker';
+      el.style.width = '32px';
+      el.style.height = '32px';
+      el.style.backgroundColor = '#2563eb';
+      el.style.borderRadius = '50%';
+      el.style.border = '3px solid white';
+      el.style.boxShadow = '0 0 10px rgba(0,0,0,0.3)';
+      el.style.display = 'flex';
+      el.style.alignItems = 'center';
+      el.style.justifyContent = 'center';
+      el.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-1.1 0-2 .9-2 2v7h2"></path><circle cx="7" cy="17" r="2"></circle><path d="M9 17h6"></path><circle cx="17" cy="17" r="2"></circle></svg>';
+
+      markerRef.current = new mapboxgl.Marker(el)
         .setLngLat([mapCenter.lng, mapCenter.lat])
         .addTo(mapInstance.current);
     } else {
       markerRef.current.setLngLat([mapCenter.lng, mapCenter.lat]);
     }
+
+    // Centering the map on the bus
+    mapInstance.current.easeTo({
+      center: [mapCenter.lng, mapCenter.lat],
+      duration: 1000
+    });
   }, [mapCenter, mapboxgl]);
 
   // Live updates via streaming endpoint
@@ -117,6 +137,7 @@ export default function BusMap() {
           if (closed) break;
           if (evt?.busId === busId) {
             setMapCenter({ lat: evt.latitude, lng: evt.longitude });
+            setLastUpdated(new Date());
           }
         }
       } catch {
@@ -161,13 +182,19 @@ export default function BusMap() {
     <div className="min-h-screen bg-gray-50">
       <div className="bg-white shadow-sm border-b">
         <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center">
-            <Link to={`/${user?.role}-dashboard`}>
-              <Button variant="ghost" size="sm" className="mr-4">
-                <ArrowLeft className="h-4 w-4" />
-              </Button>
-            </Link>
-            <h1 className="text-2xl font-bold text-gray-900">Bus {busId} Location</h1>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <Link to={`/${user?.role}-dashboard`}>
+                <Button variant="ghost" size="sm" className="mr-4">
+                  <ArrowLeft className="h-4 w-4" />
+                </Button>
+              </Link>
+              <h1 className="text-2xl font-bold text-gray-900">Bus {busId} Tracking</h1>
+            </div>
+            <Button variant="outline" size="sm" onClick={() => refetch()}>
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Refresh
+            </Button>
           </div>
         </div>
       </div>
@@ -182,126 +209,104 @@ export default function BusMap() {
           </Alert>
         )}
 
-        {busLocation && (
-          <Card className="mb-6">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle>Bus Status</CardTitle>
-                <Badge className={getStatusColor(busLocation.status)}>
-                  {busLocation.status === "moving" ? "On Route" : 
-                   busLocation.status === "delayed" ? "Delayed" : 
-                   busLocation.status === "stopped" ? "At Stop" : "Unknown"}
-                </Badge>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="grid md:grid-cols-3 gap-4">
-                <div className="flex items-center">
-                  <Clock className="h-5 w-5 text-blue-600 mr-2" />
-                  <div>
-                    <p className="text-sm text-gray-600">ETA</p>
-                    <p className="font-semibold">
+        <div className="grid lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2">
+            <Card className="overflow-hidden">
+              <CardHeader className="bg-white border-b">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-lg flex items-center">
+                    <NavigationIcon className="h-5 w-5 text-blue-600 mr-2" />
+                    Live Map
+                  </CardTitle>
+                  <Badge className="bg-blue-100 text-blue-800 animate-pulse">
+                    LIVE UPDATES
+                  </Badge>
+                </div>
+              </CardHeader>
+              <CardContent className="p-0">
+                <div className="relative">
+                  {import.meta.env.VITE_MAPBOX_TOKEN ? (
+                    <div ref={mapRef} className="h-[500px] w-full" />
+                  ) : (
+                    <div className="bg-gray-100 h-[500px] flex items-center justify-center flex-col p-6 text-center">
+                      <MapPin className="h-12 w-12 text-gray-400 mb-4" />
+                      <p className="text-gray-600 font-medium">Mapbox token missing</p>
+                      <p className="text-sm text-gray-500 mt-2">Please set VITE_MAPBOX_TOKEN in your environment settings to enable the live map.</p>
+                    </div>
+                  )}
+                  <div className="absolute bottom-4 left-4 bg-white/90 backdrop-blur-sm p-2 rounded shadow-md text-xs text-gray-600 border">
+                    Last updated: {lastUpdated.toLocaleTimeString()}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="space-y-6">
+            {busLocation && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Bus Status</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div className="flex items-center">
+                      <Clock className="h-5 w-5 text-blue-600 mr-3" />
+                      <span className="text-sm font-medium">Status</span>
+                    </div>
+                    <Badge className={getStatusColor(busLocation.status)}>
+                      {busLocation.status.toUpperCase()}
+                    </Badge>
+                  </div>
+
+                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div className="flex items-center">
+                      <NavigationIcon className="h-5 w-5 text-green-600 mr-3" />
+                      <span className="text-sm font-medium">ETA</span>
+                    </div>
+                    <span className="font-bold text-blue-700">
                       {etaPrediction ? `${etaPrediction.predictedETA} min` : 
                        busLocation.etaMinutes ? `${busLocation.etaMinutes} min` : "Calculating..."}
-                    </p>
-                    {etaPrediction && (
-                      <p className="text-xs text-gray-500">
-                        AI Prediction ({Math.round(etaPrediction.confidenceScore * 100)}% confidence)
-                      </p>
-                    )}
+                    </span>
                   </div>
-                </div>
-                <div className="flex items-center">
-                  <MapPin className="h-5 w-5 text-green-600 mr-2" />
-                  <div>
-                    <p className="text-sm text-gray-600">Location</p>
-                    <p className="font-semibold text-sm">
-                      {mapCenter.lat.toFixed(4)}, {mapCenter.lng.toFixed(4)}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center">
-                  <NavigationIcon className="h-5 w-5 text-purple-600 mr-2" />
-                  <div>
-                    <p className="text-sm text-gray-600">Last Updated</p>
-                    <p className="font-semibold text-sm">
-                      {new Date(busLocation.lastUpdated).toLocaleTimeString()}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
 
-        {etaPrediction && (
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Zap className="h-5 w-5 text-yellow-600 mr-2" />
-                AI-Powered Prediction
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid md:grid-cols-2 gap-4">
-                <div>
-                  <h4 className="font-medium mb-2">Prediction Factors</h4>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span>Distance:</span>
-                      <span>{etaPrediction.factors.distance}m</span>
+                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div className="flex items-center">
+                      <MapPin className="h-5 w-5 text-purple-600 mr-3" />
+                      <span className="text-sm font-medium">Coordinates</span>
                     </div>
-                    <div className="flex justify-between">
-                      <span>Historical Speed:</span>
-                      <span>{etaPrediction.factors.historicalSpeed} km/h</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Traffic Conditions:</span>
-                      <span className="capitalize">{etaPrediction.factors.trafficConditions}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Time of Day:</span>
-                      <span className="capitalize">{etaPrediction.factors.timeOfDay}</span>
-                    </div>
+                    <span className="text-xs font-mono text-gray-600">
+                      {mapCenter.lat.toFixed(4)}, {mapCenter.lng.toFixed(4)}
+                    </span>
                   </div>
-                </div>
-                <div>
-                  <h4 className="font-medium mb-2">Prediction Accuracy</h4>
-                  <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
+                </CardContent>
+              </Card>
+            )}
+
+            {etaPrediction && (
+              <Card className="border-blue-100 bg-blue-50/30">
+                <CardHeader>
+                  <CardTitle className="text-md flex items-center text-blue-900">
+                    <Zap className="h-4 w-4 text-blue-600 mr-2" />
+                    AI Insights
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="text-sm text-blue-800">
+                    <p className="mb-2"><strong>Traffic:</strong> {etaPrediction.factors.trafficConditions}</p>
+                    <p><strong>Confidence:</strong> {Math.round(etaPrediction.confidenceScore * 100)}%</p>
+                  </div>
+                  <div className="w-full bg-blue-100 rounded-full h-1.5">
                     <div 
-                      className="bg-blue-600 h-2 rounded-full" 
+                      className="bg-blue-600 h-1.5 rounded-full" 
                       style={{ width: `${etaPrediction.confidenceScore * 100}%` }}
                     ></div>
                   </div>
-                  <p className="text-sm text-gray-600">
-                    {Math.round(etaPrediction.confidenceScore * 100)}% confidence based on historical data
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Live Map</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="rounded-lg h-96">
-              {import.meta.env.VITE_MAPBOX_TOKEN ? (
-                <div ref={mapRef} className="h-96 w-full rounded-lg overflow-hidden" />
-              ) : (
-                <div className="bg-gray-200 rounded-lg h-96 flex items-center justify-center">
-                  <div className="text-center">
-                    <MapPin className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-600">Mapbox token missing</p>
-                    <p className="text-sm text-gray-500 mt-2">Set VITE_MAPBOX_TOKEN in your frontend .env</p>
-                  </div>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );
