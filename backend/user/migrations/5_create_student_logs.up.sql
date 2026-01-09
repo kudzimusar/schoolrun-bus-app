@@ -1,0 +1,1 @@
+CREATE TABLE student_logs (id BIGSERIAL PRIMARY KEY, student_id BIGINT NOT NULL, bus_id BIGINT NOT NULL, action TEXT NOT NULL CHECK (action IN ('boarded', 'exited')), logged_at TIMESTAMP WITH TIME ZONE DEFAULT NOW());

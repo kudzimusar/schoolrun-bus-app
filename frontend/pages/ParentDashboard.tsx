@@ -1,7 +1,7 @@
 import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { MapPin, Clock, Bell, Settings, ArrowRight, AlertTriangle } from "lucide-react";
+import { MapPin, Clock, Bell, Settings, ArrowRight, AlertTriangle, UserCheck, LogIn, LogOut } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -99,11 +99,16 @@ export default function ParentDashboard() {
               <Card key={child.id} className="hover:shadow-md transition-shadow">
                 <CardHeader>
                   <div className="flex items-center justify-between">
-                    <div>
-                      <CardTitle className="text-lg">{child.name}</CardTitle>
-                      <CardDescription>
-                        {child.busId ? `Bus ${child.busId}` : "No bus assigned"}
-                      </CardDescription>
+                    <div className="flex items-center">
+                      <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center mr-3">
+                        <UserCheck className="h-6 w-6 text-blue-600" />
+                      </div>
+                      <div>
+                        <CardTitle className="text-lg">{child.name}</CardTitle>
+                        <CardDescription>
+                          {child.busId ? `Bus ${child.busId}` : "No bus assigned"}
+                        </CardDescription>
+                      </div>
                     </div>
                     {busLocation && (
                       <Badge className={getStatusColor(busLocation.status)}>
@@ -115,34 +120,57 @@ export default function ParentDashboard() {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <div className="space-y-3">
-                      {busLocation && (
-                        <>
-                          <div className="flex items-center text-sm text-gray-600">
-                            <Clock className="h-4 w-4 mr-2" />
-                            ETA: {busLocation.etaMinutes ? `${busLocation.etaMinutes} min` : "Calculating..."}
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <div className="space-y-4">
+                      {/* Student Status Section */}
+                      <div className="bg-blue-50 rounded-lg p-4 border border-blue-100">
+                        <h4 className="text-xs font-semibold text-blue-700 uppercase tracking-wider mb-3">Current Status</h4>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center">
+                            {/* Mocking the last status for demo purposes */}
+                            <div className="h-8 w-8 rounded-full bg-white flex items-center justify-center mr-3 shadow-sm">
+                              <LogIn className="h-4 w-4 text-green-600" />
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium text-gray-900">Boarded Bus</p>
+                              <p className="text-xs text-gray-500">Today at 7:45 AM</p>
+                            </div>
                           </div>
-                          <div className="flex items-center text-sm text-gray-600">
-                            <MapPin className="h-4 w-4 mr-2" />
-                            Last updated: {new Date(busLocation.lastUpdated).toLocaleTimeString()}
-                          </div>
-                        </>
-                      )}
-                      {!busLocation && child.busId && (
-                        <div className="flex items-center text-sm text-gray-500">
-                          <AlertTriangle className="h-4 w-4 mr-2" />
-                          Bus location unavailable
+                          <Badge className="bg-green-100 text-green-800 border-green-200">SAFE</Badge>
                         </div>
-                      )}
+                      </div>
+
+                      <div className="space-y-2">
+                        {busLocation && (
+                          <>
+                            <div className="flex items-center text-sm text-gray-600">
+                              <Clock className="h-4 w-4 mr-2 text-blue-500" />
+                              ETA: <span className="font-semibold ml-1">{busLocation.etaMinutes ? `${busLocation.etaMinutes} min` : "Calculating..."}</span>
+                            </div>
+                            <div className="flex items-center text-sm text-gray-600">
+                              <MapPin className="h-4 w-4 mr-2 text-green-500" />
+                              Last updated: {new Date(busLocation.lastUpdated).toLocaleTimeString()}
+                            </div>
+                          </>
+                        )}
+                        {!busLocation && child.busId && (
+                          <div className="flex items-center text-sm text-gray-500">
+                            <AlertTriangle className="h-4 w-4 mr-2 text-orange-500" />
+                            Bus location unavailable
+                          </div>
+                        )}
+                      </div>
                     </div>
-                    <div className="flex justify-end">
-                      <Link to="/parent-dashboard/bus-map" state={{ busId: child.busId }}>
-                        <Button className="w-full md:w-auto" disabled={!child.busId}>
-                          View on Map
+                    <div className="flex flex-col justify-end gap-3">
+                      <Link to="/parent-dashboard/bus-map" state={{ busId: child.busId }} className="w-full">
+                        <Button className="w-full bg-blue-600 hover:bg-blue-700" disabled={!child.busId}>
+                          Track Live Location
                           <ArrowRight className="h-4 w-4 ml-2" />
                         </Button>
                       </Link>
+                      <Button variant="outline" className="w-full">
+                        View Attendance History
+                      </Button>
                     </div>
                   </div>
                 </CardContent>
@@ -166,13 +194,13 @@ export default function ParentDashboard() {
             </CardHeader>
             <CardContent>
               <div className="grid md:grid-cols-2 gap-4">
-                <Link to="/parent-dashboard/settings">
+                <Link to="/parent-dashboard/settings" className="w-full">
                   <Button variant="outline" className="w-full h-16 flex-col">
                     <Settings className="h-6 w-6 mb-1" />
                     Notification Settings
                   </Button>
                 </Link>
-                <Link to="/parent-dashboard/notifications-history">
+                <Link to="/parent-dashboard/notifications-history" className="w-full">
                   <Button variant="outline" className="w-full h-16 flex-col">
                     <Bell className="h-6 w-6 mb-1" />
                     View All Alerts
