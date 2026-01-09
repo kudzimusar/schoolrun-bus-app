@@ -2,6 +2,7 @@ import { api, APIError } from "encore.dev/api";
 import { authDB } from "./db";
 import { userDB } from "../user/db";
 import crypto from "crypto";
+import bcrypt from "bcrypt";
 
 export interface LoginRequest {
   email: string;
@@ -31,10 +32,11 @@ export const login = api<LoginRequest, LoginResponse>(
       email: string;
       name: string;
       role: string;
+      password_hash: string;
       wallet_balance_usd: number;
       wallet_balance_zwl: number;
     }>`
-      SELECT id, email, name, role, 
+      SELECT id, email, name, role, password_hash,
              COALESCE(wallet_balance_usd, 0) as wallet_balance_usd, 
              COALESCE(wallet_balance_zwl, 0) as wallet_balance_zwl
       FROM users 
@@ -42,11 +44,14 @@ export const login = api<LoginRequest, LoginResponse>(
     `;
     
     if (!user) {
-      throw APIError.invalidArgument("Invalid credentials");
+      throw APIError.unauthenticated("Invalid credentials");
     }
     
-    // In a real implementation, you would verify the password hash
-    // For demo purposes, we accept any password for existing users
+    // Verify the password hash
+    const passwordMatch = await bcrypt.compare(req.password, user.password_hash);
+    if (!passwordMatch) {
+      throw APIError.unauthenticated("Invalid credentials");
+    }
     
     // Generate session token
     const sessionToken = crypto.randomBytes(32).toString('hex');

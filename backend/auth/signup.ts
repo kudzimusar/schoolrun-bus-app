@@ -2,6 +2,7 @@ import { api, APIError } from "encore.dev/api";
 import { authDB } from "./db";
 import { userDB } from "../user/db";
 import crypto from "crypto";
+import bcrypt from "bcrypt";
 
 export interface SignupRequest {
   email: string;
@@ -36,6 +37,10 @@ export const signup = api<SignupRequest, SignupResponse>(
     if (existingUser) {
       throw APIError.alreadyExists("User with this email already exists");
     }
+
+    // Hash the password
+    const saltRounds = 10;
+    const passwordHash = await bcrypt.hash(req.password, saltRounds);
     
     // Create new user
     const user = await userDB.queryRow<{
@@ -46,8 +51,8 @@ export const signup = api<SignupRequest, SignupResponse>(
       wallet_balance_usd: number;
       wallet_balance_zwl: number;
     }>`
-      INSERT INTO users (email, name, role, phone)
-      VALUES (${req.email}, ${req.name}, ${req.role}, ${req.phone})
+      INSERT INTO users (email, name, role, phone, password_hash)
+      VALUES (${req.email}, ${req.name}, ${req.role}, ${req.phone}, ${passwordHash})
       RETURNING id, email, name, role, wallet_balance_usd, wallet_balance_zwl
     `;
     
