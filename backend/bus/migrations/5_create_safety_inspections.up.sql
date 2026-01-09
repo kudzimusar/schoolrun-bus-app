@@ -1,0 +1,1 @@
+CREATE TABLE safety_inspections (id BIGSERIAL PRIMARY KEY, bus_id BIGINT NOT NULL, driver_id BIGINT NOT NULL, inspection_type TEXT NOT NULL, completed_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(), notes TEXT);
