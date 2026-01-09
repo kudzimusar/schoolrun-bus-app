@@ -1,7 +1,5 @@
 import React, { useState, useEffect, createContext, useContext, ReactNode } from "react";
 import backend from "~backend/client";
-import { useAuth as useClerkAuth } from "@clerk/clerk-react";
-import { useAuth0 } from "@auth0/auth0-react";
 
 interface User {
   id: number;
@@ -30,40 +28,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [sessionToken, setSessionToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [client, setClient] = useState<any>(null);
-  const clerk = useClerkAuth?.();
-  const auth0 = useAuth0?.();
 
   useEffect(() => {
     const token = localStorage.getItem("sessionToken");
     const userData = localStorage.getItem("user");
     if (token) setSessionToken(token);
-    if (userData) setUser(JSON.parse(userData));
+    if (userData) {
+      try {
+        setUser(JSON.parse(userData));
+      } catch (e) {
+        console.error("Failed to parse user data from localStorage", e);
+      }
+    }
     setIsLoading(false);
   }, []);
-
-  useEffect(() => {
-    (async () => {
-      try {
-        if (clerk && clerk.isSignedIn) {
-          const t = await clerk.getToken();
-          if (t) setSessionToken(t);
-        }
-      } catch {}
-    })();
-  }, [clerk?.isSignedIn]);
-
-  useEffect(() => {
-    (async () => {
-      try {
-        if (auth0 && auth0.isAuthenticated) {
-          // Prefer ID token for backend verification
-          const claims = await auth0.getIdTokenClaims();
-          const raw = (claims as any)?.__raw as string | undefined;
-          if (raw) setSessionToken(raw);
-        }
-      } catch {}
-    })();
-  }, [auth0?.isAuthenticated]);
 
   useEffect(() => {
     const headers: Record<string, string> = { "Content-Type": "application/json" };
