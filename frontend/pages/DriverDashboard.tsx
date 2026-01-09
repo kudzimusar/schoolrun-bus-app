@@ -1,6 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Navigation, Users, AlertTriangle, MapPin, Clock, Phone, CheckCircle } from "lucide-react";
+import { Navigation, Users, AlertTriangle, MapPin, Clock, Phone, CheckCircle, Play, Square } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -19,16 +19,14 @@ export default function DriverDashboard() {
   const [incidentType, setIncidentType] = useState("");
   const [incidentDescription, setIncidentDescription] = useState("");
   const [isReportingIncident, setIsReportingIncident] = useState(false);
+  const [isTracking, setIsTracking] = useState(false);
+  const [lastLocation, setLastLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const watchId = useRef<number | null>(null);
   const { toast } = useToast();
 
   const { data: buses, isLoading } = useQuery({
     queryKey: ["buses"],
     queryFn: () => backend.bus.listBuses(),
-  });
-
-  const { data: locations } = useQuery({
-    queryKey: ["locations"],
-    queryFn: () => backend.location.listAllLocations(),
   });
 
   const { data: routes } = useQuery({
@@ -41,14 +39,84 @@ export default function DriverDashboard() {
     queryFn: () => backend.incident.listIncidents({ status: "open" }),
   });
 
+  // For demo purposes, assume driver is assigned to first bus
+  const assignedBus = buses?.buses[0];
+  const currentRoute = routes?.routes.find(route => route.busId === assignedBus?.id);
+
+  // GPS Tracking Logic
+  const startTracking = () => {
+    if (!assignedBus) return;
+    if (!("geolocation" in navigator)) {
+      toast({
+        title: "Error",
+        description: "Geolocation is not supported by your browser",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsTracking(true);
+    toast({
+      title: "Trip Started",
+      description: "GPS tracking is now active.",
+    });
+
+    watchId.current = navigator.geolocation.watchPosition(
+      async (position) => {
+        const { latitude, longitude, speed, heading } = position.coords;
+        setLastLocation({ lat: latitude, lng: longitude });
+
+        try {
+          await backend.location.updateLocation({
+            busId: assignedBus.id,
+            latitude,
+            longitude,
+            speed: speed || 0,
+            heading: heading || 0,
+          });
+        } catch (error) {
+          console.error("Failed to update location:", error);
+        }
+      },
+      (error) => {
+        console.error("Geolocation error:", error);
+        toast({
+          title: "GPS Error",
+          description: "Failed to get your location. Please check your GPS settings.",
+          variant: "destructive",
+        });
+      },
+      {
+        enableHighAccuracy: true,
+        maximumAge: 10000,
+        timeout: 5000,
+      }
+    );
+  };
+
+  const stopTracking = () => {
+    if (watchId.current !== null) {
+      navigator.geolocation.clearWatch(watchId.current);
+      watchId.current = null;
+    }
+    setIsTracking(false);
+    toast({
+      title: "Trip Ended",
+      description: "GPS tracking has been stopped.",
+    });
+  };
+
+  useEffect(() => {
+    return () => {
+      if (watchId.current !== null) {
+        navigator.geolocation.clearWatch(watchId.current);
+      }
+    };
+  }, []);
+
   if (isLoading) {
     return <LoadingSpinner />;
   }
-
-  // For demo purposes, assume driver is assigned to first bus
-  const assignedBus = buses?.buses[0];
-  const busLocation = assignedBus ? locations?.locations.find(loc => loc.busId === assignedBus.id) : null;
-  const currentRoute = routes?.routes.find(route => route.busId === assignedBus?.id);
 
   const handleReportIncident = async () => {
     if (!incidentType || !incidentDescription || !assignedBus) {
@@ -69,8 +137,8 @@ export default function DriverDashboard() {
         severity: "medium",
         title: `${incidentType.replace('_', ' ')} reported`,
         description: incidentDescription,
-        latitude: busLocation?.latitude,
-        longitude: busLocation?.longitude,
+        latitude: lastLocation?.lat,
+        longitude: lastLocation?.lng,
       });
 
       toast({
@@ -99,36 +167,6 @@ export default function DriverDashboard() {
     });
   };
 
-  const handleUpdateLocation = async () => {
-    if (!assignedBus) return;
-
-    try {
-      // Simulate location update with slight variation
-      const lat = 40.7128 + (Math.random() - 0.5) * 0.01;
-      const lng = -74.0060 + (Math.random() - 0.5) * 0.01;
-      
-      await backend.location.updateLocation({
-        busId: assignedBus.id,
-        latitude: lat,
-        longitude: lng,
-        speed: Math.random() * 30 + 10, // 10-40 mph
-        heading: Math.random() * 360,
-      });
-
-      toast({
-        title: "Location Updated",
-        description: "Your bus location has been updated successfully.",
-      });
-    } catch (error) {
-      console.error("Failed to update location:", error);
-      toast({
-        title: "Error",
-        description: "Failed to update location. Please try again.",
-        variant: "destructive",
-      });
-    }
-  };
-
   return (
     <div className="min-h-screen bg-gray-50">
       <Header title="Driver Dashboard">
@@ -141,47 +179,68 @@ export default function DriverDashboard() {
       <div className="container mx-auto px-4 py-6">
         <div className="grid gap-6">
           {assignedBus && (
-            <Card>
+            <Card className={isTracking ? "border-green-500 ring-1 ring-green-500" : ""}>
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div>
                     <CardTitle>Bus {assignedBus.number}</CardTitle>
                     <CardDescription>Your assigned vehicle</CardDescription>
                   </div>
-                  <Badge className={assignedBus.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}>
-                    {assignedBus.status}
-                  </Badge>
+                  <div className="flex items-center gap-2">
+                    {isTracking && (
+                      <Badge className="bg-green-100 text-green-800 animate-pulse">
+                        LIVE TRACKING
+                      </Badge>
+                    )}
+                    <Badge className={assignedBus.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}>
+                      {assignedBus.status}
+                    </Badge>
+                  </div>
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="grid md:grid-cols-3 gap-4">
-                  <div className="flex items-center">
-                    <Users className="h-5 w-5 text-blue-600 mr-2" />
-                    <div>
-                      <p className="text-sm text-gray-600">Capacity</p>
-                      <p className="font-semibold">{assignedBus.capacity} students</p>
-                    </div>
-                  </div>
-                  {busLocation && (
-                    <>
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="flex items-center">
+                        <Users className="h-5 w-5 text-blue-600 mr-2" />
+                        <div>
+                          <p className="text-sm text-gray-600">Capacity</p>
+                          <p className="font-semibold">{assignedBus.capacity} students</p>
+                        </div>
+                      </div>
                       <div className="flex items-center">
                         <MapPin className="h-5 w-5 text-green-600 mr-2" />
                         <div>
-                          <p className="text-sm text-gray-600">Current Location</p>
+                          <p className="text-sm text-gray-600">Location</p>
                           <p className="font-semibold text-sm">
-                            {busLocation.latitude.toFixed(4)}, {busLocation.longitude.toFixed(4)}
+                            {lastLocation ? `${lastLocation.lat.toFixed(4)}, ${lastLocation.lng.toFixed(4)}` : "Not tracking"}
                           </p>
                         </div>
                       </div>
-                      <div className="flex items-center">
-                        <Clock className="h-5 w-5 text-purple-600 mr-2" />
-                        <div>
-                          <p className="text-sm text-gray-600">Status</p>
-                          <p className="font-semibold capitalize">{busLocation.status}</p>
-                        </div>
-                      </div>
-                    </>
-                  )}
+                    </div>
+                    
+                    {!isTracking ? (
+                      <Button onClick={startTracking} className="w-full bg-green-600 hover:bg-green-700 h-12 text-lg">
+                        <Play className="h-5 w-5 mr-2" />
+                        Start Trip
+                      </Button>
+                    ) : (
+                      <Button onClick={stopTracking} variant="destructive" className="w-full h-12 text-lg">
+                        <Square className="h-5 w-5 mr-2" />
+                        End Trip
+                      </Button>
+                    )}
+                  </div>
+
+                  <div className="bg-blue-50 rounded-lg p-4 flex flex-col justify-center">
+                    <h4 className="font-semibold text-blue-900 mb-1">Trip Instructions</h4>
+                    <p className="text-sm text-blue-800">
+                      {isTracking 
+                        ? "Keep this app open during your trip. Your location is being shared with parents in real-time." 
+                        : "Press 'Start Trip' when you begin your route to notify parents and start tracking."}
+                    </p>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -217,10 +276,6 @@ export default function DriverDashboard() {
                       <p className="text-gray-500">No active route assigned</p>
                     </div>
                   )}
-                  <Button className="w-full">
-                    <Navigation className="h-4 w-4 mr-2" />
-                    Start Navigation
-                  </Button>
                 </div>
               </CardContent>
             </Card>
@@ -268,7 +323,7 @@ export default function DriverDashboard() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid md:grid-cols-3 gap-4">
+              <div className="grid md:grid-cols-2 gap-4">
                 <Dialog>
                   <DialogTrigger asChild>
                     <Button variant="outline" className="h-16 flex-col">
@@ -283,7 +338,7 @@ export default function DriverDashboard() {
                         Report any incidents or issues during your route
                       </DialogDescription>
                     </DialogHeader>
-                    <div className="space-y-4">
+                    <div className="space-y-4 py-4">
                       <div className="space-y-2">
                         <Label htmlFor="incident-type">Incident Type</Label>
                         <Select value={incidentType} onValueChange={setIncidentType}>
@@ -326,15 +381,6 @@ export default function DriverDashboard() {
                 >
                   <Phone className="h-6 w-6 mb-1" />
                   Emergency Alert
-                </Button>
-
-                <Button 
-                  variant="outline" 
-                  className="h-16 flex-col"
-                  onClick={handleUpdateLocation}
-                >
-                  <MapPin className="h-6 w-6 mb-1" />
-                  Update Location
                 </Button>
               </div>
             </CardContent>
