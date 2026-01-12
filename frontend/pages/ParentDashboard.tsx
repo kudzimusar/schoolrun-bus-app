@@ -206,6 +206,12 @@ export default function ParentDashboard() {
                     View All Alerts
                   </Button>
                 </Link>
+                <Link to="/parent-dashboard/payments" className="w-full">
+                  <Button variant="outline" className="w-full h-16 flex-col border-blue-200 bg-blue-50 text-blue-700">
+                    <CreditCard className="h-6 w-6 mb-1" />
+                    Subscription & Payments
+                  </Button>
+                </Link>
               </div>
             </CardContent>
           </Card>

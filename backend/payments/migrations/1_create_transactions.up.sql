@@ -1,0 +1,1 @@
+CREATE TABLE transactions (id BIGSERIAL PRIMARY KEY, user_id BIGINT NOT NULL, amount DECIMAL(10, 2) NOT NULL, currency TEXT NOT NULL, status TEXT NOT NULL, paynow_reference TEXT, poll_url TEXT, created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(), updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW());
