@@ -61,7 +61,7 @@ export const initiatePaynow = api<PaynowInitiateRequest, PaynowInitiateResponse>
       RETURNING id
     `;
 
-    if (!row) throw new APIError(500, "failed to log transaction");
+    if (!row) throw new APIError("internal", "failed to log transaction");
 
     // Simulated Paynow response
     return {
@@ -78,7 +78,7 @@ export const checkPaymentStatus = api<{ transactionId: number }, { status: strin
     const row = await paymentsDB.queryRow<{ status: string }>`
       SELECT status FROM transactions WHERE id = ${transactionId}
     `;
-    if (!row) throw new APIError(404, "transaction not found");
+    if (!row) throw new APIError("not_found", "transaction not found");
     return { status: row.status };
   }
 );
