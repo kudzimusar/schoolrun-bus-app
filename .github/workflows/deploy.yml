@@ -28,6 +28,8 @@ jobs:
           bun install
 
       - name: Build
+        env:
+          VITE_ENCORE_API_URL: ${{ vars.VITE_ENCORE_API_URL }}
         run: |
           cd frontend
           bun run vite build --base=/schoolrun-bus-app/ --outDir=dist
@@ -43,4 +45,3 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
-
