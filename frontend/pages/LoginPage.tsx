@@ -98,21 +98,11 @@ export default function LoginPage() {
   const { toast } = useToast();
   const { user, login, signup } = useAuth();
 
-  // Seed data on component mount
+  // Seed data on component mount - disabled for production
   useEffect(() => {
-    const seedDatabase = async () => {
-      setIsSeeding(true);
-      try {
-        await backend.data.seedData();
-        console.log("Database seeded successfully");
-      } catch (error) {
-        console.error("Failed to seed database:", error);
-      } finally {
-        setIsSeeding(false);
-      }
-    };
-
-    seedDatabase();
+    // Database seeding is handled by the administrator or via a dedicated setup script.
+    // We don't want to attempt seeding on every login page load in production.
+    setIsSeeding(false);
   }, []);
 
   // Redirect if already logged in

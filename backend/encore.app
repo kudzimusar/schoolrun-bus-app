@@ -1,1 +1,1 @@
-{"id": "school-run-bus-app-3iki", "lang": "typescript", "global_cors": { "allow_origins_with_credentials": ["http://localhost:5173"] }}
+{"id": "school-run-bus-app-3iki", "lang": "typescript", "global_cors": { "allow_origins_with_credentials": ["http://localhost:5173", "https://kudzimusar.github.io"] }}
