@@ -35,19 +35,30 @@ export const checkGeofence = api<CheckGeofenceRequest, CheckGeofenceResponse>(
       latitude: number;
       longitude: number;
       radiusMeters: number;
+      isPolygon: boolean;
+      polygonCoordinates: [number, number][] | null;
     }>`
-      SELECT id, name, latitude, longitude, radius_meters as "radiusMeters"
+      SELECT id, name, latitude, longitude, radius_meters as "radiusMeters",
+             is_polygon as "isPolygon", polygon_coordinates as "polygonCoordinates"
       FROM geofences 
       WHERE is_active = true
     `;
     
     for (const geofence of geofences) {
-      const distance = calculateDistance(
-        req.latitude, req.longitude,
-        geofence.latitude, geofence.longitude
-      );
+      let isInside = false;
       
-      const isInside = distance <= geofence.radiusMeters;
+      if (geofence.isPolygon && geofence.polygonCoordinates) {
+        isInside = isPointInPolygon(
+          [req.latitude, req.longitude],
+          geofence.polygonCoordinates
+        );
+      } else {
+        const distance = calculateDistance(
+          req.latitude, req.longitude,
+          geofence.latitude, geofence.longitude
+        );
+        isInside = distance <= geofence.radiusMeters;
+      }
       
       // Check if bus was previously inside this geofence
       const lastEvent = await geofencingDB.queryRow<{ eventType: string }>`
@@ -101,3 +112,22 @@ export const checkGeofence = api<CheckGeofenceRequest, CheckGeofenceResponse>(
 // Haversine formula to calculate distance between two points
 import { calculateDistance } from "./distance";
 export { calculateDistance };
+
+/**
+ * Ray-casting algorithm to check if a point is inside a polygon.
+ * @param point [latitude, longitude]
+ * @param polygon Array of [latitude, longitude] pairs
+ */
+function isPointInPolygon(point: [number, number], polygon: [number, number][]): boolean {
+  const x = point[0], y = point[1];
+  let inside = false;
+  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+    const xi = polygon[i][0], yi = polygon[i][1];
+    const xj = polygon[j][0], yj = polygon[j][1];
+    
+    const intersect = ((yi > y) !== (yj > y))
+        && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
+    if (intersect) inside = !inside;
+  }
+  return inside;
+}

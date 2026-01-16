@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Plus, MapPin, Clock, Edit, Trash2, Bus } from "lucide-react";
+import { ArrowLeft, Plus, MapPin, Clock, Edit, Trash2, Bus, Shield, Hexagon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -43,6 +43,11 @@ export default function RouteManagementPage() {
     { id: 3, name: "Cedar Street & Birch Avenue", time: "08:25", order: 3 },
     { id: 4, name: "Willow Street & Ash Avenue", time: "08:30", order: 4 },
     { id: 5, name: "Oakwood Elementary School", time: "08:35", order: 5 },
+  ]);
+
+  const [geofences, setGeofences] = useState<any[]>([
+    { id: 1, name: "School Zone", type: "school", isPolygon: true, isActive: true },
+    { id: 2, name: "Main Depot", type: "depot", isPolygon: false, radius: 200, isActive: true },
   ]);
 
   const [newRoute, setNewRoute] = useState({
@@ -236,39 +241,74 @@ export default function RouteManagementPage() {
                     </div>
                   </div>
 
-                  <div>
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-lg font-medium">Bus Stops</h3>
-                      <Button variant="outline" size="sm">
-                        <Plus className="h-4 w-4 mr-2" />
-                        Add Stop
-                      </Button>
+                  <div className="space-y-6">
+                    <div>
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-lg font-medium">Bus Stops</h3>
+                        <Button variant="outline" size="sm">
+                          <Plus className="h-4 w-4 mr-2" />
+                          Add Stop
+                        </Button>
+                      </div>
+                      <div className="space-y-3">
+                        {busStops.map((stop) => (
+                          <div key={stop.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                            <div className="flex items-center space-x-3">
+                              <div className="w-8 h-8 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-sm font-medium">
+                                {stop.order}
+                              </div>
+                              <div>
+                                <p className="font-medium">{stop.name}</p>
+                                <p className="text-sm text-gray-500 flex items-center">
+                                  <Clock className="h-4 w-4 mr-1" />
+                                  {stop.time}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <Button variant="ghost" size="sm">
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button variant="ghost" size="sm">
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                    <div className="space-y-3">
-                      {busStops.map((stop) => (
-                        <div key={stop.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                          <div className="flex items-center space-x-3">
-                            <div className="w-8 h-8 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-sm font-medium">
-                              {stop.order}
+
+                    <div>
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-lg font-medium">GeoAlert Zones</h3>
+                        <Button variant="outline" size="sm" className="text-blue-600 border-blue-200">
+                          <Hexagon className="h-4 w-4 mr-2" />
+                          Draw Polygon
+                        </Button>
+                      </div>
+                      <div className="space-y-3">
+                        {geofences.map((gf) => (
+                          <div key={gf.id} className="flex items-center justify-between p-3 bg-blue-50/50 rounded-lg border border-blue-100">
+                            <div className="flex items-center space-x-3">
+                              <Shield className="h-5 w-5 text-blue-500" />
+                              <div>
+                                <p className="font-medium text-sm">{gf.name}</p>
+                                <p className="text-xs text-gray-500 capitalize">
+                                  {gf.isPolygon ? "Polygon Zone" : `Circular (${gf.radius}m)`} • {gf.type}
+                                </p>
+                              </div>
                             </div>
-                            <div>
-                              <p className="font-medium">{stop.name}</p>
-                              <p className="text-sm text-gray-500 flex items-center">
-                                <Clock className="h-4 w-4 mr-1" />
-                                {stop.time}
-                              </p>
+                            <div className="flex items-center space-x-2">
+                              <Button variant="ghost" size="sm">
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button variant="ghost" size="sm" className="text-red-500">
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
                             </div>
                           </div>
-                          <div className="flex items-center space-x-2">
-                            <Button variant="ghost" size="sm">
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button variant="ghost" size="sm">
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      ))}
+                        ))}
+                      </div>
                     </div>
                   </div>
 

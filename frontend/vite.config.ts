@@ -15,6 +15,9 @@ export default defineConfig(({ mode }) => ({
     tailwindcss(),
     react(),
   ],
+  server: {
+    allowedHosts: true,
+  },
   build: {
     target: 'esnext',
     minify: mode === 'production',
