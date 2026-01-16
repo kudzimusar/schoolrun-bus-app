@@ -93,17 +93,9 @@ export default function LoginPage() {
   const [phone, setPhone] = useState("");
   const [selectedDemoUser, setSelectedDemoUser] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [isSeeding, setIsSeeding] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user, login, signup } = useAuth();
-
-  // Seed data on component mount - disabled for production
-  useEffect(() => {
-    // Database seeding is handled by the administrator or via a dedicated setup script.
-    // We don't want to attempt seeding on every login page load in production.
-    setIsSeeding(false);
-  }, []);
 
   // Redirect if already logged in
   if (user) {
@@ -239,18 +231,7 @@ export default function LoginPage() {
     }
   };
 
-  if (isSeeding) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-        <Card className="w-full max-w-md">
-          <CardContent className="text-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Setting up demo data...</p>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
