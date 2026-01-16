@@ -1,4 +1,4 @@
-import { api, APIError } from "encore.dev/api";
+import { api, APIError, ErrCode } from "encore.dev/api";
 import { secret } from "encore.dev/config";
 import { SQLDatabase } from "encore.dev/storage/sqldb";
 import crypto from "crypto";
@@ -61,7 +61,7 @@ export const initiatePaynow = api<PaynowInitiateRequest, PaynowInitiateResponse>
       RETURNING id
     `;
 
-    if (!row) throw new APIError("internal", "failed to log transaction");
+    if (!row) throw new APIError(ErrCode.Internal, "failed to log transaction");
 
     // Simulated Paynow response
     return {
@@ -78,7 +78,7 @@ export const checkPaymentStatus = api<{ transactionId: number }, { status: strin
     const row = await paymentsDB.queryRow<{ status: string }>`
       SELECT status FROM transactions WHERE id = ${transactionId}
     `;
-    if (!row) throw new APIError("not_found", "transaction not found");
+    if (!row) throw new APIError(ErrCode.NotFound, "transaction not found");
     return { status: row.status };
   }
 );
