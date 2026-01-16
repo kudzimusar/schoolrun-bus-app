@@ -1,7 +1,7 @@
 import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { MapPin, Clock, Bell, Settings, ArrowRight, AlertTriangle, UserCheck, LogIn, LogOut } from "lucide-react";
+import { MapPin, Clock, Bell, Settings, ArrowRight, AlertTriangle, UserCheck, LogIn, LogOut, CreditCard } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
