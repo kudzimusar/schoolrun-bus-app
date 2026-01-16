@@ -1340,5 +1340,5 @@ export enum ErrCode {
     Unauthenticated = "unauthenticated",
 }
 
-const target = import.meta.env.VITE_ENCORE_API_URL || import.meta.env.VITE_CLIENT_TARGET || Local;
+const target = import.meta.env.VITE_ENCORE_API_URL || import.meta.env.VITE_CLIENT_TARGET || "https://school-run-bus-app-3iki.encr.app";
 export default new Client(target, { requestInit: { credentials: "include" } });
